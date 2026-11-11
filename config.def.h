@@ -98,34 +98,35 @@ float alpha = 0.9;
 
 /* Terminal colors (16 first used in escape sequence) */
 static const char *colorname[] = {
-	/* Gruvbox Material, dark hard background, material foreground palette.
-	 * Source: https://github.com/sainnhe/gruvbox-material */
+	/* Custom Gruvbox Material Dark Hard: brighter neutral text,
+	 * muted red, green and yellow. Based on:
+	 * https://github.com/sainnhe/gruvbox-material */
 	/* 8 normal colors */
 	"#1d2021",
-	"#ea6962",
-	"#a9b665",
-	"#d8a657",
+	"#c17570",
+	"#929d70",
+	"#b9a078",
 	"#7daea3",
 	"#d3869b",
 	"#89b482",
-	"#d4be98",
+	"#e8e3d9",
 
 	/* 8 bright colors */
 	"#928374",
-	"#ea6962",
-	"#a9b665",
-	"#d8a657",
+	"#c17570",
+	"#929d70",
+	"#b9a078",
 	"#7daea3",
 	"#d3869b",
 	"#89b482",
-	"#ddc7a1",
+	"#f5f2ec",
 
 	[255] = 0,
 
 	/* Default cursor, reverse cursor, foreground and background. */
-	"#d4be98",
+	"#e8e3d9",
 	"#1d2021",
-	"#d4be98",
+	"#e8e3d9",
 	"#1d2021",
 };
 
@@ -348,6 +349,7 @@ static Key key[] = {
 	{ XK_Right,         XK_ANY_MOD,     "\033[C",        0,   -1},
 	{ XK_Right,         XK_ANY_MOD,     "\033OC",        0,   +1},
 	{ XK_ISO_Left_Tab,  ShiftMask,      "\033[Z",        0,    0},
+	{ XK_Return,        ControlMask,    "\033[13;5u",    0,    0},
 	{ XK_Return,        Mod1Mask,       "\033\r",        0,    0},
 	{ XK_Return,        XK_ANY_MOD,     "\r",            0,    0},
 	{ XK_Insert,        ShiftMask,      "\033[4l",      -1,    0},
