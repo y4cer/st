@@ -5,7 +5,7 @@
  *
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
-static char *font = "Liberation Mono:pixelsize=12:antialias=true:autohint=true";
+static char *font = "Adwaita Mono:size=11:antialias=true:autohint=true";
 static int borderpx = 2;
 
 /*
@@ -93,35 +93,40 @@ char *termname = "st-256color";
  */
 unsigned int tabspaces = 8; /* must be > 0 */
 
+/* Background opacity: 0.0 = transparent, 1.0 = opaque. Override with -A. */
+float alpha = 0.9;
+
 /* Terminal colors (16 first used in escape sequence) */
 static const char *colorname[] = {
+	/* Gruvbox Material, dark hard background, material foreground palette.
+	 * Source: https://github.com/sainnhe/gruvbox-material */
 	/* 8 normal colors */
-	"black",
-	"red3",
-	"green3",
-	"yellow3",
-	"blue2",
-	"magenta3",
-	"cyan3",
-	"gray90",
+	"#1d2021",
+	"#ea6962",
+	"#a9b665",
+	"#d8a657",
+	"#7daea3",
+	"#d3869b",
+	"#89b482",
+	"#d4be98",
 
 	/* 8 bright colors */
-	"gray50",
-	"red",
-	"green",
-	"yellow",
-	"#5c5cff",
-	"magenta",
-	"cyan",
-	"white",
+	"#928374",
+	"#ea6962",
+	"#a9b665",
+	"#d8a657",
+	"#7daea3",
+	"#d3869b",
+	"#89b482",
+	"#ddc7a1",
 
 	[255] = 0,
 
-	/* more colors can be added after 255 to use with DefaultXX */
-	"#cccccc",
-	"#555555",
-	"gray90", /* default foreground colour */
-	"black", /* default background colour */
+	/* Default cursor, reverse cursor, foreground and background. */
+	"#d4be98",
+	"#1d2021",
+	"#d4be98",
+	"#1d2021",
 };
 
 
@@ -175,7 +180,9 @@ static uint forcemousemod = ShiftMask;
  * Beware that overloading Button1 will disable the selection.
  */
 static MouseShortcut mshortcuts[] = {
-	/* mask                 button   function        argument       release */
+	/* mask                 button   function        argument       release, altscrn */
+	{ XK_ANY_MOD,           Button4, kscrollup,      {.i = 3},      0, -1 },
+	{ XK_ANY_MOD,           Button5, kscrolldown,    {.i = 3},      0, -1 },
 	{ XK_ANY_MOD,           Button2, selpaste,       {.i = 0},      1 },
 	{ ShiftMask,            Button4, ttysend,        {.s = "\033[5;2~"} },
 	{ XK_ANY_MOD,           Button4, ttysend,        {.s = "\031"} },
@@ -193,6 +200,11 @@ static Shortcut shortcuts[] = {
 	{ ControlMask,          XK_Print,       toggleprinter,  {.i =  0} },
 	{ ShiftMask,            XK_Print,       printscreen,    {.i =  0} },
 	{ XK_ANY_MOD,           XK_Print,       printsel,       {.i =  0} },
+	{ ControlMask,          XK_equal,       zoom,           {.f = +1} },
+	{ ControlMask,          XK_plus,        zoom,           {.f = +1} },
+	{ TERMMOD,              XK_plus,        zoom,           {.f = +1} },
+	{ ControlMask,          XK_minus,       zoom,           {.f = -1} },
+	{ ControlMask,          XK_0,           zoomreset,      {.f =  0} },
 	{ TERMMOD,              XK_Prior,       zoom,           {.f = +1} },
 	{ TERMMOD,              XK_Next,        zoom,           {.f = -1} },
 	{ TERMMOD,              XK_Home,        zoomreset,      {.f =  0} },
@@ -201,6 +213,8 @@ static Shortcut shortcuts[] = {
 	{ TERMMOD,              XK_Y,           selpaste,       {.i =  0} },
 	{ ShiftMask,            XK_Insert,      selpaste,       {.i =  0} },
 	{ TERMMOD,              XK_Num_Lock,    numlock,        {.i =  0} },
+	{ ShiftMask,            XK_Page_Up,     kscrollup,      {.i = -1} },
+	{ ShiftMask,            XK_Page_Down,   kscrolldown,    {.i = -1} },
 };
 
 /*
