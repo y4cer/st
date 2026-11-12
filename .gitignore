@@ -1,3 +1,6 @@
 /st
 /*.o
 /st-*.tar.gz
+/tests/bin/
+/core
+/core.*

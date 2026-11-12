@@ -255,6 +255,16 @@ static char *opt_name  = NULL;
 static char *opt_title = NULL;
 
 static uint buttons; /* bit field of pressed buttons */
+static struct { int active, incr, bracketed, discard; } paste;
+
+/* Cancel child delivery, but keep draining/acknowledging an INCR owner. */
+void
+xpastecancel(void)
+{
+	if (paste.bracketed) ttywrite("\033[201~", 6, 0);
+	paste.bracketed = 0;
+	if (paste.active) paste.discard = 1;
+}
 
 void
 clipcopy(const Arg *dummy)
@@ -276,6 +286,8 @@ clippaste(const Arg *dummy)
 {
 	Atom clipboard;
 
+	if (browseactive() || paste.active) return;
+	paste.active = 1;
 	clipboard = XInternAtom(xw.dpy, "CLIPBOARD", 0);
 	XConvertSelection(xw.dpy, clipboard, xsel.xtarget, clipboard,
 			xw.win, CurrentTime);
@@ -284,6 +296,8 @@ clippaste(const Arg *dummy)
 void
 selpaste(const Arg *dummy)
 {
+	if (browseactive() || paste.active) return;
+	paste.active = 1;
 	XConvertSelection(xw.dpy, XA_PRIMARY, xsel.xtarget, XA_PRIMARY,
 			xw.win, CurrentTime);
 }
@@ -475,6 +489,15 @@ bpress(XEvent *e)
 	struct timespec now;
 	int snap;
 
+	if (browseactive()) {
+		if (btn == Button4 || btn == Button5) {
+			int i;
+			for (i = 0; i < 3; i++)
+				browseinput(btn == Button4 ? XK_k : XK_j, 0, NULL, 0);
+		}
+		return;
+	}
+
 	if (1 <= btn && btn <= 11)
 		buttons |= 1 << (btn-1);
 
@@ -528,6 +551,11 @@ selnotify(XEvent *e)
 	uchar *data, *last, *repl;
 	Atom type, incratom, property = None;
 
+	if (browseactive()) {
+		xpastecancel();
+		paste.discard = 1;
+	}
+
 	incratom = XInternAtom(xw.dpy, "INCR", 0);
 
 	ofs = 0;
@@ -536,8 +564,12 @@ selnotify(XEvent *e)
 	else if (e->type == PropertyNotify)
 		property = e->xproperty.atom;
 
-	if (property == None)
+	if (property == None) {
+		xpastecancel();
+		memset(&paste, 0, sizeof(paste));
 		return;
+	}
+	paste.active = 1;
 
 	do {
 		if (XGetWindowProperty(xw.dpy, xw.win, property, ofs,
@@ -561,6 +593,8 @@ selnotify(XEvent *e)
 		}
 
 		if (type == incratom) {
+			paste.incr = 1;
+			XFree(data);
 			/*
 			 * Activate the PropertyNotify events so we receive
 			 * when the selection owner does send us the next
@@ -574,7 +608,7 @@ selnotify(XEvent *e)
 			 * Deleting the property is the transfer start signal.
 			 */
 			XDeleteProperty(xw.dpy, xw.win, (int)property);
-			continue;
+			return;
 		}
 
 		/*
@@ -590,15 +624,22 @@ selnotify(XEvent *e)
 			*repl++ = '\r';
 		}
 
-		if (IS_SET(MODE_BRCKTPASTE) && ofs == 0)
-			ttywrite("\033[200~", 6, 0);
-		ttywrite((char *)data, nitems * format / 8, 1);
-		if (IS_SET(MODE_BRCKTPASTE) && rem == 0)
-			ttywrite("\033[201~", 6, 0);
+		if (!paste.discard && nitems > 0) {
+			if (IS_SET(MODE_BRCKTPASTE) && !paste.bracketed) {
+				ttywrite("\033[200~", 6, 0);
+				paste.bracketed = 1;
+			}
+			ttywrite((char *)data, nitems * format / 8, 1);
+		}
 		XFree(data);
 		/* number of 32-bit chunks returned */
-		ofs += nitems * format / 32;
+		ofs += (nitems * format + 31) / 32;
 	} while (rem > 0);
+
+	if (!paste.incr || nitems == 0) {
+		if (paste.bracketed) ttywrite("\033[201~", 6, 0);
+		memset(&paste, 0, sizeof(paste));
+	}
 
 	/*
 	 * Deleting the property again tells the selection owner to send the
@@ -705,6 +746,9 @@ brelease(XEvent *e)
 	if (1 <= btn && btn <= 11)
 		buttons &= ~(1 << (btn-1));
 
+	if (browseactive())
+		return;
+
 	if (IS_SET(MODE_MOUSE) && !(e->xbutton.state & forcemousemod)) {
 		mousereport(e);
 		return;
@@ -719,6 +763,9 @@ brelease(XEvent *e)
 void
 bmotion(XEvent *e)
 {
+	if (browseactive())
+		return;
+
 	if (IS_SET(MODE_MOUSE) && !(e->xbutton.state & forcemousemod)) {
 		mousereport(e);
 		return;
@@ -793,6 +840,34 @@ xloadcolor(int i, const char *name, Color *ncolor)
 	return XftColorAllocName(xw.dpy, xw.vis, xw.cmap, name, ncolor);
 }
 
+/* ARGB32 pixels and XRender colors must both be premultiplied. */
+static void
+xapplyalpha(Color *color)
+{
+	unsigned int a;
+	if (xw.depth != 32) return;
+	color->color.red = (unsigned short)(color->color.red * alpha);
+	color->color.green = (unsigned short)(color->color.green * alpha);
+	color->color.blue = (unsigned short)(color->color.blue * alpha);
+	color->color.alpha = (unsigned short)(0xffff * alpha);
+	a = (unsigned int)(0xff * alpha);
+	color->pixel = ((unsigned long)a << 24) |
+	               ((unsigned long)(color->color.red >> 8) << 16) |
+	               ((unsigned long)(color->color.green >> 8) << 8) |
+	               (color->color.blue >> 8);
+}
+
+static float
+parsealpha(const char *s)
+{
+	char *end;
+	float value = strtof(s, &end);
+	if (end == s || *end || !isfinite(value))
+		die("invalid opacity: %s\n", s);
+	LIMIT(value, 0.0, 1.0);
+	return value;
+}
+
 void
 xloadcols(void)
 {
@@ -816,9 +891,7 @@ xloadcols(void)
 				die("could not allocate color %d\n", i);
 		}
 
-	dc.col[defaultbg].color.alpha = (unsigned short)(0xffff * alpha);
-	dc.col[defaultbg].pixel &= 0x00FFFFFF;
-	dc.col[defaultbg].pixel |= (unsigned char)(0xff * alpha) << 24;
+	xapplyalpha(&dc.col[defaultbg]);
 	loaded = 1;
 }
 
@@ -849,11 +922,8 @@ xsetcolorname(int x, const char *name)
 	XftColorFree(xw.dpy, xw.vis, xw.cmap, &dc.col[x]);
 	dc.col[x] = ncolor;
 
-	if (x == defaultbg) {
-		dc.col[defaultbg].color.alpha = (unsigned short)(0xffff * alpha);
-		dc.col[defaultbg].pixel &= 0x00FFFFFF;
-		dc.col[defaultbg].pixel |= (unsigned char)(0xff * alpha) << 24;
-	}
+	if (x == defaultbg)
+		xapplyalpha(&dc.col[defaultbg]);
 
 	return 0;
 }
@@ -1691,7 +1761,7 @@ xdrawline(Line line, int x1, int y1, int x2)
 		new = line[x];
 		if (new.mode == ATTR_WDUMMY)
 			continue;
-		if (selected(x, y1))
+		if (!browseactive() && selected(x, y1))
 			new.mode ^= ATTR_REVERSE;
 		if (i > 0 && ATTRCMP(base, new)) {
 			xdrawglyphfontspecs(specs, base, i, ox, y1);
@@ -1811,13 +1881,13 @@ focus(XEvent *ev)
 			XSetICFocus(xw.ime.xic);
 		win.mode |= MODE_FOCUSED;
 		xseturgency(0);
-		if (IS_SET(MODE_FOCUS))
+		if (IS_SET(MODE_FOCUS) && !browseactive())
 			ttywrite("\033[I", 3, 0);
 	} else {
 		if (xw.ime.xic)
 			XUnsetICFocus(xw.ime.xic);
 		win.mode &= ~MODE_FOCUSED;
-		if (IS_SET(MODE_FOCUS))
+		if (IS_SET(MODE_FOCUS) && !browseactive())
 			ttywrite("\033[O", 3, 0);
 	}
 }
@@ -1865,6 +1935,30 @@ kmap(KeySym k, uint state)
 	return NULL;
 }
 
+/* Normalize ЙЦУКЕН command keys even when Russian is the first/only group. */
+static KeySym
+browsekeysym(KeySym key, uint state)
+{
+	static const KeySym ru[] = {
+		XK_Cyrillic_io, XK_Cyrillic_shorti, XK_Cyrillic_tse, XK_Cyrillic_u,
+		XK_Cyrillic_ka, XK_Cyrillic_ie, XK_Cyrillic_en, XK_Cyrillic_ghe,
+		XK_Cyrillic_sha, XK_Cyrillic_shcha, XK_Cyrillic_ze, XK_Cyrillic_ha,
+		XK_Cyrillic_hardsign, XK_Cyrillic_ef, XK_Cyrillic_yeru, XK_Cyrillic_ve,
+		XK_Cyrillic_a, XK_Cyrillic_pe, XK_Cyrillic_er, XK_Cyrillic_o,
+		XK_Cyrillic_el, XK_Cyrillic_de, XK_Cyrillic_zhe, XK_Cyrillic_e,
+		XK_Cyrillic_ya, XK_Cyrillic_che, XK_Cyrillic_es, XK_Cyrillic_em,
+		XK_Cyrillic_i, XK_Cyrillic_te, XK_Cyrillic_softsign, XK_Cyrillic_be, XK_Cyrillic_yu
+	};
+	static const char lower[] = "`qwertyuiop[]asdfghjkl;'zxcvbnm,.";
+	static const char upper[] = "~QWERTYUIOP{}ASDFGHJKL:\"ZXCVBNM<>";
+	KeySym lo, hi;
+	size_t i;
+	XConvertCase(key, &lo, &hi);
+	for (i = 0; i < LEN(ru); i++)
+		if (lo == ru[i]) return (state & ShiftMask) ? upper[i] : lower[i];
+	return key;
+}
+
 void
 kpress(XEvent *ev)
 {
@@ -1886,6 +1980,13 @@ kpress(XEvent *ev)
 	} else {
 		len = XLookupString(e, buf, sizeof buf, &ksym, NULL);
 	}
+	if (browseactive()) {
+		/* Use physical QWERTY keys, so commands also work in Russian. */
+		browseinput(browsekeysym(XLookupKeysym(e, (e->state & ShiftMask) ? 1 : 0), e->state),
+		            e->state, buf, len);
+		return;
+	}
+
 	/* 1. shortcuts */
 	for (bp = shortcuts; bp < shortcuts + LEN(shortcuts); bp++) {
 		if (ksym == bp->keysym && match(bp->mod, e->state)) {
@@ -1955,7 +2056,7 @@ run(void)
 	fd_set rfd;
 	int xfd = XConnectionNumber(xw.dpy), ttyfd, xev, drawing;
 	struct timespec seltv, *tv, now, lastblink, trigger;
-	double timeout;
+	double timeout, copytimeout;
 
 	/* Waiting for window mapping */
 	do {
@@ -2045,6 +2146,10 @@ run(void)
 		}
 
 		draw();
+		/* A yank flash must expire without another key or child output. */
+		copytimeout = browsetimeout();
+		if (copytimeout >= 0 && (timeout < 0 || copytimeout < timeout))
+			timeout = copytimeout;
 		XFlush(xw.dpy);
 		drawing = 0;
 	}
@@ -2075,8 +2180,7 @@ main(int argc, char *argv[])
 		allowaltscreen = 0;
 		break;
 	case 'A':
-		alpha = strtof(EARGF(usage()), NULL);
-		LIMIT(alpha, 0.0, 1.0);
+		alpha = parsealpha(EARGF(usage()));
 		break;
 	case 'c':
 		opt_class = EARGF(usage());

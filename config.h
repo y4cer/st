@@ -197,6 +197,7 @@ static MouseShortcut mshortcuts[] = {
 
 static Shortcut shortcuts[] = {
 	/* mask                 keysym          function        argument */
+	{ TERMMOD,              XK_space,       browse,         {.i =  0} },
 	{ XK_ANY_MOD,           XK_Break,       sendbreak,      {.i =  0} },
 	{ ControlMask,          XK_Print,       toggleprinter,  {.i =  0} },
 	{ ShiftMask,            XK_Print,       printscreen,    {.i =  0} },
@@ -249,7 +250,7 @@ static KeySym mappedkeys[] = { -1 };
  * State bits to ignore when matching key or button events.  By default,
  * numlock (Mod2Mask) and keyboard layout (XK_SWITCH_MOD) are ignored.
  */
-static uint ignoremod = Mod2Mask|XK_SWITCH_MOD;
+static uint ignoremod = Mod2Mask|LockMask|XK_SWITCH_MOD;
 
 /*
  * This is the huge key array which defines all compatibility to the Linux
@@ -349,6 +350,9 @@ static Key key[] = {
 	{ XK_Right,         XK_ANY_MOD,     "\033[C",        0,   -1},
 	{ XK_Right,         XK_ANY_MOD,     "\033OC",        0,   +1},
 	{ XK_ISO_Left_Tab,  ShiftMask,      "\033[Z",        0,    0},
+	{ XK_Return,        ControlMask|ShiftMask|Mod1Mask, "\033[13;8u", 0, 0},
+	{ XK_Return,        ControlMask|Mod1Mask, "\033[13;7u", 0, 0},
+	{ XK_Return,        ControlMask|ShiftMask, "\033[13;6u", 0, 0},
 	{ XK_Return,        ControlMask,    "\033[13;5u",    0,    0},
 	{ XK_Return,        Mod1Mask,       "\033\r",        0,    0},
 	{ XK_Return,        XK_ANY_MOD,     "\r",            0,    0},

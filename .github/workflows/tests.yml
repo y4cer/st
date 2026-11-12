@@ -1,0 +1,17 @@
+name: st regression tests
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config libx11-dev libxft-dev libfontconfig1-dev python3
+      - name: Build
+        run: make -j2
+      - name: Regression tests
+        run: make test
+      - name: Address, undefined-behavior and leak checks
+        run: make test-sanitize

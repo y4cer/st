@@ -81,6 +81,10 @@ void die(const char *, ...);
 void redraw(void);
 void draw(void);
 
+int browseactive(void);
+double browsetimeout(void);
+void browse(const Arg *);
+void browseinput(unsigned long, unsigned int, const char *, int);
 void kscrolldown(const Arg *);
 void kscrollup(const Arg *);
 void printscreen(const Arg *);

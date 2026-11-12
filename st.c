@@ -14,8 +14,11 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <termios.h>
+#include <time.h>
 #include <unistd.h>
 #include <wchar.h>
+#include <X11/keysym.h>
+#include <X11/X.h>
 
 #include "st.h"
 #include "win.h"
@@ -121,6 +124,7 @@ typedef struct {
 	Line *alt;    /* alternate screen */
 	Line hist[HISTSIZE]; /* history buffer */
 	int histi;    /* history index */
+	int histlen;  /* number of populated history lines */
 	int scr;      /* scroll back */
 	int *dirty;   /* dirtyness of lines */
 	TCursor c;    /* cursor */
@@ -215,6 +219,8 @@ static void selnormalize(void);
 static void selscroll(int, int);
 static void selsnap(int *, int *, int);
 
+static void browseclose(void);
+static void browsedraw(void);
 static size_t utf8decode(const char *, Rune *, size_t);
 static Rune utf8decodebyte(char, size_t *);
 static char utf8encodebyte(Rune, size_t);
@@ -615,11 +621,12 @@ getsel(void)
 			gp = &TLINE(y)[sel.nb.y == y ? sel.nb.x : 0];
 			lastx = (sel.ne.y == y) ? sel.ne.x : term.col-1;
 		}
-		last = &TLINE(y)[MIN(lastx, linelen-1)];
-		while (last >= gp && last->u == ' ')
+		/* Exclusive end: never form or dereference line - 1. */
+		last = &TLINE(y)[MIN(lastx + 1, linelen)];
+		while (last > gp && (last - 1)->u == ' ')
 			--last;
 
-		for ( ; gp <= last; ++gp) {
+		for ( ; gp < last; ++gp) {
 			if (gp->mode & ATTR_WDUMMY)
 				continue;
 
@@ -636,7 +643,7 @@ getsel(void)
 		 * FIXME: Fix the computer world.
 		 */
 		if ((y < sel.ne.y || lastx >= linelen) &&
-		    (!(last->mode & ATTR_WRAP) || sel.type == SEL_RECTANGULAR))
+		    (!(TLINE(y)[term.col - 1].mode & ATTR_WRAP) || sel.type == SEL_RECTANGULAR))
 			*ptr++ = '\n';
 	}
 	*ptr = 0;
@@ -1030,6 +1037,10 @@ treset(void)
 {
 	uint i;
 
+	term.scr = term.histlen = term.histi = 0;
+	selclear();
+	if (IS_SET(MODE_ALTSCREEN)) tswapscreen();
+
 	term.c = (TCursor){{
 		.mode = ATTR_NULL,
 		.fg = defaultfg,
@@ -1074,6 +1085,7 @@ tswapscreen(void)
 	term.line = term.alt;
 	term.alt = tmp;
 	term.mode ^= MODE_ALTSCREEN;
+	term.scr = 0;
 	tfulldirt();
 }
 
@@ -1083,7 +1095,7 @@ kscrolldown(const Arg* a)
 	int n = a->i;
 
 	if (n < 0)
-		n = term.row + n;
+		n = MAX(1, term.row + n);
 
 	if (n > term.scr)
 		n = term.scr;
@@ -1100,10 +1112,10 @@ kscrollup(const Arg* a)
 {
 	int n = a->i;
 
-	if (n < 0)
-		n = term.row + n;
-
-	if (term.scr <= HISTSIZE-n) {
+	if (IS_SET(MODE_ALTSCREEN)) return;
+	if (n < 0) n = MAX(1, term.row + n);
+	n = MIN(n, term.histlen - term.scr);
+	if (n > 0) {
 		term.scr += n;
 		selscroll(0, n);
 		tfulldirt();
@@ -1118,12 +1130,8 @@ tscrolldown(int orig, int n, int copyhist)
 
 	LIMIT(n, 0, term.bot-orig+1);
 
-	if (copyhist) {
-		term.histi = (term.histi - 1 + HISTSIZE) % HISTSIZE;
-		temp = term.hist[term.histi];
-		term.hist[term.histi] = term.line[term.bot];
-		term.line[term.bot] = temp;
-	}
+	/* Reverse index never appends to (or rewinds) normal scrollback. */
+	(void)copyhist;
 
 	tsetdirt(orig, term.bot-n);
 	tclearregion(0, term.bot-n+1, term.col-1, term.bot);
@@ -1146,15 +1154,17 @@ tscrollup(int orig, int n, int copyhist)
 
 	LIMIT(n, 0, term.bot-orig+1);
 
-	if (copyhist) {
+	if (copyhist && n > 0 && orig == 0 && term.bot == term.row - 1 &&
+	    !IS_SET(MODE_ALTSCREEN)) {
+		term.histlen = MIN(term.histlen + 1, HISTSIZE);
 		term.histi = (term.histi + 1) % HISTSIZE;
 		temp = term.hist[term.histi];
 		term.hist[term.histi] = term.line[orig];
 		term.line[orig] = temp;
 	}
 
-	if (term.scr > 0 && term.scr < HISTSIZE)
-		term.scr = MIN(term.scr + n, HISTSIZE-1);
+	if (term.scr > 0 && copyhist && orig == 0 && term.bot == term.row - 1)
+		term.scr = MIN(term.scr + n, term.histlen);
 
 	tclearregion(0, orig, term.col-1, orig+n-1);
 	tsetdirt(orig+n, term.bot);
@@ -1297,10 +1307,26 @@ tsetchar(Rune u, const Glyph *attr, int x, int y)
 	term.line[y][x].u = u;
 }
 
+/* Repair split wide glyphs after editing or truncating a physical line. */
+static void
+repairwide(Line line, int cols)
+{
+	int x;
+	for (x = 0; x < cols; x++) {
+		if (((line[x].mode & ATTR_WIDE) &&
+		     (x + 1 == cols || !(line[x + 1].mode & ATTR_WDUMMY))) ||
+		    ((line[x].mode & ATTR_WDUMMY) &&
+		     (x == 0 || !(line[x - 1].mode & ATTR_WIDE)))) {
+			line[x].u = ' ';
+			line[x].mode &= ~(ATTR_WIDE | ATTR_WDUMMY);
+		}
+	}
+}
+
 void
 tclearregion(int x1, int y1, int x2, int y2)
 {
-	int x, y, temp;
+	int x, y, temp, first, last;
 	Glyph *gp;
 
 	if (x1 > x2)
@@ -1315,7 +1341,11 @@ tclearregion(int x1, int y1, int x2, int y2)
 
 	for (y = y1; y <= y2; y++) {
 		term.dirty[y] = 1;
-		for (x = x1; x <= x2; x++) {
+		first = x1;
+		last = x2;
+		if (first > 0 && (term.line[y][first].mode & ATTR_WDUMMY)) first--;
+		if (last + 1 < term.col && (term.line[y][last].mode & ATTR_WIDE)) last++;
+		for (x = first; x <= last; x++) {
 			gp = &term.line[y][x];
 			if (selected(x, y))
 				selclear();
@@ -1342,6 +1372,7 @@ tdeletechar(int n)
 
 	memmove(&line[dst], &line[src], size * sizeof(Glyph));
 	tclearregion(term.col-n, term.c.y, term.col-1, term.c.y);
+	repairwide(line, term.col);
 }
 
 void
@@ -1359,6 +1390,7 @@ tinsertblank(int n)
 
 	memmove(&line[dst], &line[src], size * sizeof(Glyph));
 	tclearregion(src, term.c.y, dst - 1, term.c.y);
+	repairwide(line, term.col);
 }
 
 void
@@ -2652,6 +2684,12 @@ tresize(int col, int row)
 	int *bp;
 	TCursor c;
 
+	/* Selection coordinates cannot outlive the dimensions they refer to. */
+	selclear();
+	/* Resizing ends copy mode; its immutable snapshot has the old width. */
+	if (browseactive())
+		browseclose();
+
 	if (col < 1 || row < 1) {
 		fprintf(stderr,
 		        "tresize: error resizing to %dx%d\n", col, row);
@@ -2731,6 +2769,11 @@ tresize(int col, int row)
 		tcursor(CURSOR_LOAD);
 	}
 	term.c = c;
+	for (i = 0; i < row; i++) {
+		repairwide(term.line[i], col);
+		repairwide(term.alt[i], col);
+	}
+	for (i = 0; i < HISTSIZE; i++) repairwide(term.hist[i], col);
 }
 
 void
@@ -2761,6 +2804,11 @@ draw(void)
 	if (!xstartdraw())
 		return;
 
+	if (browseactive()) {
+		browsedraw();
+		return;
+	}
+
 	/* adjust cursor position */
 	LIMIT(term.ocx, 0, term.col-1);
 	LIMIT(term.ocy, 0, term.row-1);
@@ -2786,3 +2834,5 @@ redraw(void)
 	tfulldirt();
 	draw();
 }
+
+#include "browse.c"
