@@ -5,7 +5,8 @@
  *
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
-static char *font = "Adwaita Mono:size=11:antialias=true:autohint=true";
+/* Keep a monospace fallback when Adwaita Mono is not installed. */
+static char *font = "Adwaita Mono,monospace:size=11:antialias=true:autohint=true";
 static int borderpx = 2;
 
 /*

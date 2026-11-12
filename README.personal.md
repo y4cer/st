@@ -39,7 +39,7 @@ Ctrl+c outside copy mode remains the normal interrupt key.
 ## Other customizations
 
 - Alpha transparency: 90% opacity, or override with `st -A 0.8`.
-- Adwaita Mono 11; Ctrl+plus/equal and Ctrl+minus zoom, Ctrl+0 resets.
+- Adwaita Mono 11, with the system monospace font as fallback; Ctrl+plus/equal and Ctrl+minus zoom, Ctrl+0 resets.
 - Scrollback via mouse wheel or Shift+PageUp/PageDown.
 - Customized Gruvbox Material Dark Hard palette.
 - Distinct Ctrl+Enter sequence for Pi (`CSI 13;5u`).
