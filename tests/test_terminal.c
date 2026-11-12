@@ -12,6 +12,7 @@ int allowaltscreen = 1, allowwindowops = 0;
 unsigned int tabspaces = 8, defaultfg = 258, defaultbg = 259, defaultcs = 256;
 static char *clipboard;
 static int copies, flash_cells;
+#ifndef ST_REFERENCE_BRIDGE
 void xbell(void) {}
 void xclipcopy(void)
 {
@@ -84,6 +85,8 @@ void xximspot(int x, int y)
     (void)x;
     (void)y;
 }
+
+#endif
 
 static void init(int cols, int rows)
 {
