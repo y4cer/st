@@ -50,12 +50,6 @@ void selstart(int x, int y, int s)
     (void)y;
     (void)s;
 }
-size_t utf8encode(Rune u, char *b)
-{
-    (void)u;
-    (void)b;
-    return 0;
-}
 char *xstrdup(const char *s)
 {
     return strdup(s);
@@ -290,6 +284,7 @@ struct test {
     T(incr_complete), T(incr_cancel),     T(incr_ro_start), T(normal_paste), T(empty_paste),
     T(focus_ro),      T(ctrl_enter),      T(alpha_zero),    T(alpha_half),   T(alpha_opaque_visual),
     T(alpha_parse),   T(russian_commands)};
+#ifndef ST_FRONTEND_BRIDGE
 int main(int argc, char **argv)
 {
     if (argc == 1) {
@@ -305,3 +300,5 @@ int main(int argc, char **argv)
         }
     return 2;
 }
+
+#endif

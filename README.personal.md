@@ -53,6 +53,10 @@ make test
 make test-sanitize
 ```
 
+All C targets use `-Wall -Werror -Wpedantic`. Shitty is the reference for future
+changes; the full portable reference inventory runs in both targets with explicit
+known differences and exclusions (see `tests/shitty/README.md`).
+
 The suite runs headlessly, including selected MIT-licensed cases adapted from
 `pg83/shitty`, copy-mode/history regressions, and simulated X11 INCR paste tests.
 See `tests/README.md` for coverage, provenance and limitations. Independent

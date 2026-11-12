@@ -4,7 +4,7 @@
 
 include config.mk
 
-SRC = st.c x.c
+SRC = st.c x.c utf8.c
 OBJ = $(SRC:.c=.o)
 
 all: st
@@ -17,27 +17,41 @@ config.h:
 
 st.o: config.h st.h win.h browse.c
 x.o: arg.h config.h st.h win.h
+utf8.o: st.h
 
 $(OBJ): config.h config.mk
 
 st: $(OBJ)
-	$(CC) -o $@ $(OBJ) $(STLDFLAGS)
+	$(CC) $(WARNFLAGS) -o $@ $(OBJ) $(STLDFLAGS)
 
 # Test binaries are separate: sanitizers never contaminate the installed st.
-TESTFLAGS = -std=c99 -D_XOPEN_SOURCE=600 -DVERSION=\"test\" -g -O1 -ffunction-sections -fdata-sections -Wl,--gc-sections
-TESTSAN = -fsanitize=address,undefined -fno-omit-frame-pointer
+TESTFLAGS = $(WARNFLAGS) $(INCS) -std=c99 -D_XOPEN_SOURCE=600 -DVERSION=\"test\" -g -O1 -ffunction-sections -fdata-sections -Wl,--gc-sections
+TESTSAN = -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer
 
-test:
+test: test-reference-build
 	mkdir -p tests/bin
-	$(CC) $(TESTFLAGS) tests/test_terminal.c -o tests/bin/terminal -lutil
-	$(CC) $(TESTFLAGS) $(INCS) tests/test_x11.c -o tests/bin/x11 $(LIBS)
+	$(CC) $(TESTFLAGS) tests/test_terminal.c utf8.c -o tests/bin/terminal -lutil
+	$(CC) $(TESTFLAGS) tests/test_x11.c utf8.c -o tests/bin/x11 $(LIBS)
 	python3 tests/run.py tests/bin/terminal tests/bin/x11
+	python3 tests/shitty/check.py
 
-test-sanitize:
+test-sanitize: test-reference-sanitize-build
 	mkdir -p tests/bin
-	$(CC) $(TESTFLAGS) $(TESTSAN) tests/test_terminal.c -o tests/bin/terminal-asan -lutil
-	$(CC) $(TESTFLAGS) $(TESTSAN) $(INCS) tests/test_x11.c -o tests/bin/x11-asan $(LIBS)
+	$(CC) $(TESTFLAGS) $(TESTSAN) tests/test_terminal.c utf8.c -o tests/bin/terminal-asan -lutil
+	$(CC) $(TESTFLAGS) $(TESTSAN) tests/test_x11.c utf8.c -o tests/bin/x11-asan $(LIBS)
 	python3 tests/run.py tests/bin/terminal-asan tests/bin/x11-asan
+	ST_TEST_BRIDGE=tests/bin/shitty-bridge-asan ST_TEST_FRONTEND=tests/bin/shitty-frontend-asan python3 tests/shitty/check.py --sanitize
+
+# Reference adapters execute the real core/frontend in isolated subprocesses.
+test-reference-build:
+	mkdir -p tests/bin
+	$(CC) $(TESTFLAGS) tests/shitty/bridge.c utf8.c -o tests/bin/shitty-bridge -lutil
+	$(CC) $(TESTFLAGS) tests/shitty/frontend.c utf8.c -o tests/bin/shitty-frontend $(LIBS)
+
+test-reference-sanitize-build:
+	mkdir -p tests/bin
+	$(CC) $(TESTFLAGS) $(TESTSAN) tests/shitty/bridge.c utf8.c -o tests/bin/shitty-bridge-asan -lutil
+	$(CC) $(TESTFLAGS) $(TESTSAN) tests/shitty/frontend.c utf8.c -o tests/bin/shitty-frontend-asan $(LIBS)
 
 clean:
 	rm -f st $(OBJ) st-$(VERSION).tar.gz
@@ -65,4 +79,4 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/st
 	rm -f $(DESTDIR)$(MANPREFIX)/man1/st.1
 
-.PHONY: all clean dist install uninstall test test-sanitize
+.PHONY: all clean dist install uninstall test test-sanitize test-reference-build test-reference-sanitize-build

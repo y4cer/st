@@ -25,6 +25,14 @@ for `test-sanitize`. No graphical session or network access is required.
   AddressSanitizer, UndefinedBehaviorSanitizer and leak detection. Test
   binaries are isolated from production objects and are not installed.
 
+## Full Shitty reference suite
+
+The selected native adaptations below are now supplemented by the complete
+reference inventory and portable adapters in [shitty/README.md](shitty/README.md).
+Both make targets run it. See [coverage](shitty/COVERAGE.md) for passing cases,
+explicit exclusions and documented behavior differences; XFAIL is not a pass.
+All C targets compile with `-Wall -Werror -Wpedantic`.
+
 ## Shitty provenance and license
 
 Selected cases are C adaptations of the public MIT-licensed test contribution
@@ -44,7 +52,8 @@ layer of https://github.com/pg83/shitty at commit
 The corresponding notices are retained in `LICENSE.shitty` and
 `LICENSE.xtermjs`. **The Shitty repository as a whole is not MIT**: its imported
 baseline contains GPL code. No GPL terminal implementation is imported here.
-The suite is a selected adaptation, not a port of Shitty's entire test corpus.
+The native C suite is a selected adaptation. The complete imported inventory
+and its portable execution scope are documented under shitty/.
 Custom copy-mode/history/X11 regressions are additional tests for this fork.
 
 Unsupported features (full grapheme clusters, resize reflow, DECSTR, Kitty

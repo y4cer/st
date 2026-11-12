@@ -221,10 +221,6 @@ static void selsnap(int *, int *, int);
 
 static void browseclose(void);
 static void browsedraw(void);
-static size_t utf8decode(const char *, Rune *, size_t);
-static Rune utf8decodebyte(char, size_t *);
-static char utf8encodebyte(Rune, size_t);
-static size_t utf8validate(Rune *, size_t);
 
 static char *base64dec(const char *);
 static char base64dec_getc(const char **);
@@ -239,11 +235,6 @@ static STREscape strescseq;
 static int iofd = 1;
 static int cmdfd;
 static pid_t pid;
-
-static const uchar utfbyte[UTF_SIZ + 1] = {0x80,    0, 0xC0, 0xE0, 0xF0};
-static const uchar utfmask[UTF_SIZ + 1] = {0xC0, 0x80, 0xE0, 0xF0, 0xF8};
-static const Rune utfmin[UTF_SIZ + 1] = {       0,    0,  0x80,  0x800,  0x10000};
-static const Rune utfmax[UTF_SIZ + 1] = {0x10FFFF, 0x7F, 0x7FF, 0xFFFF, 0x10FFFF};
 
 ssize_t
 xwrite(int fd, const char *s, size_t len)
@@ -291,76 +282,6 @@ xstrdup(const char *s)
 		die("strdup: %s\n", strerror(errno));
 
 	return p;
-}
-
-size_t
-utf8decode(const char *c, Rune *u, size_t clen)
-{
-	size_t i, j, len, type;
-	Rune udecoded;
-
-	*u = UTF_INVALID;
-	if (!clen)
-		return 0;
-	udecoded = utf8decodebyte(c[0], &len);
-	if (!BETWEEN(len, 1, UTF_SIZ))
-		return 1;
-	for (i = 1, j = 1; i < clen && j < len; ++i, ++j) {
-		udecoded = (udecoded << 6) | utf8decodebyte(c[i], &type);
-		if (type != 0)
-			return j;
-	}
-	if (j < len)
-		return 0;
-	*u = udecoded;
-	utf8validate(u, len);
-
-	return len;
-}
-
-Rune
-utf8decodebyte(char c, size_t *i)
-{
-	for (*i = 0; *i < LEN(utfmask); ++(*i))
-		if (((uchar)c & utfmask[*i]) == utfbyte[*i])
-			return (uchar)c & ~utfmask[*i];
-
-	return 0;
-}
-
-size_t
-utf8encode(Rune u, char *c)
-{
-	size_t len, i;
-
-	len = utf8validate(&u, 0);
-	if (len > UTF_SIZ)
-		return 0;
-
-	for (i = len - 1; i != 0; --i) {
-		c[i] = utf8encodebyte(u, 0);
-		u >>= 6;
-	}
-	c[0] = utf8encodebyte(u, len);
-
-	return len;
-}
-
-char
-utf8encodebyte(Rune u, size_t i)
-{
-	return utfbyte[i] | (u & ~utfmask[i]);
-}
-
-size_t
-utf8validate(Rune *u, size_t i)
-{
-	if (!BETWEEN(*u, utfmin[i], utfmax[i]) || BETWEEN(*u, 0xD800, 0xDFFF))
-		*u = UTF_INVALID;
-	for (i = 1; *u > utfmax[i]; ++i)
-		;
-
-	return i;
 }
 
 char
@@ -1129,6 +1050,8 @@ tscrolldown(int orig, int n, int copyhist)
 	Line temp;
 
 	LIMIT(n, 0, term.bot-orig+1);
+	if (n == 0)
+		return;
 
 	/* Reverse index never appends to (or rewinds) normal scrollback. */
 	(void)copyhist;
@@ -1153,6 +1076,8 @@ tscrollup(int orig, int n, int copyhist)
 	Line temp;
 
 	LIMIT(n, 0, term.bot-orig+1);
+	if (n == 0)
+		return;
 
 	if (copyhist && n > 0 && orig == 0 && term.bot == term.row - 1 &&
 	    !IS_SET(MODE_ALTSCREEN)) {
@@ -1231,8 +1156,10 @@ csiparse(void)
 		v = strtol(p, &np, 10);
 		if (np == p)
 			v = 0;
-		if (v == LONG_MAX || v == LONG_MIN)
-			v = -1;
+		if (v < 0)
+			v = -1; /* keep invalid edit counts as no-ops */
+		if (v > INT_MAX)
+			v = INT_MAX;
 		csiescseq.arg[csiescseq.narg++] = v;
 		p = np;
 		if (sep == ';' && *p == ':')
@@ -1249,7 +1176,7 @@ csiparse(void)
 void
 tmoveato(int x, int y)
 {
-	tmoveto(x, y + ((term.c.state & CURSOR_ORIGIN) ? term.top: 0));
+	tmoveto(x, MIN(y, term.row - 1) + ((term.c.state & CURSOR_ORIGIN) ? term.top: 0));
 }
 
 void
@@ -1364,6 +1291,8 @@ tdeletechar(int n)
 	Glyph *line;
 
 	LIMIT(n, 0, term.col - term.c.x);
+	if (n == 0)
+		return;
 
 	dst = term.c.x;
 	src = term.c.x + n;
@@ -1382,6 +1311,8 @@ tinsertblank(int n)
 	Glyph *line;
 
 	LIMIT(n, 0, term.col - term.c.x);
+	if (n == 0)
+		return;
 
 	dst = term.c.x + n;
 	src = term.c.x;
@@ -1735,7 +1666,7 @@ csihandle(void)
 	case 'B': /* CUD -- Cursor <n> Down */
 	case 'e': /* VPR --Cursor <n> Down */
 		DEFAULT(csiescseq.arg[0], 1);
-		tmoveto(term.c.x, term.c.y+csiescseq.arg[0]);
+		tmoveto(term.c.x, term.c.y+MIN(csiescseq.arg[0], term.row - 1 - term.c.y));
 		break;
 	case 'i': /* MC -- Media Copy */
 		switch (csiescseq.arg[0]) {
@@ -1769,7 +1700,7 @@ csihandle(void)
 	case 'C': /* CUF -- Cursor <n> Forward */
 	case 'a': /* HPR -- Cursor <n> Forward */
 		DEFAULT(csiescseq.arg[0], 1);
-		tmoveto(term.c.x+csiescseq.arg[0], term.c.y);
+		tmoveto(term.c.x+MIN(csiescseq.arg[0], term.col - 1 - term.c.x), term.c.y);
 		break;
 	case 'D': /* CUB -- Cursor <n> Backward */
 		DEFAULT(csiescseq.arg[0], 1);
@@ -1777,7 +1708,7 @@ csihandle(void)
 		break;
 	case 'E': /* CNL -- Cursor <n> Down and first col */
 		DEFAULT(csiescseq.arg[0], 1);
-		tmoveto(0, term.c.y+csiescseq.arg[0]);
+		tmoveto(0, term.c.y+MIN(csiescseq.arg[0], term.row - 1 - term.c.y));
 		break;
 	case 'F': /* CPL -- Cursor <n> Up and first col */
 		DEFAULT(csiescseq.arg[0], 1);
@@ -1866,9 +1797,11 @@ csihandle(void)
 		tdeleteline(csiescseq.arg[0]);
 		break;
 	case 'X': /* ECH -- Erase <n> char */
+		if (csiescseq.arg[0] < 0)
+			break;
 		DEFAULT(csiescseq.arg[0], 1);
 		tclearregion(term.c.x, term.c.y,
-				term.c.x + csiescseq.arg[0] - 1, term.c.y);
+				term.c.x + MIN(csiescseq.arg[0], term.col - term.c.x) - 1, term.c.y);
 		break;
 	case 'P': /* DCH -- Delete <n> char */
 		DEFAULT(csiescseq.arg[0], 1);
@@ -2733,12 +2666,19 @@ tresize(int col, int row)
 	for (i = 0; i < minrow; i++) {
 		term.line[i] = xrealloc(term.line[i], col * sizeof(Glyph));
 		term.alt[i]  = xrealloc(term.alt[i],  col * sizeof(Glyph));
+		/* tclearregion inspects wide-cell flags at its boundaries. */
+		if (col > mincol) {
+			memset(term.line[i] + mincol, 0, (col - mincol) * sizeof(Glyph));
+			memset(term.alt[i] + mincol, 0, (col - mincol) * sizeof(Glyph));
+		}
 	}
 
 	/* allocate any new rows */
 	for (/* i = minrow */; i < row; i++) {
 		term.line[i] = xmalloc(col * sizeof(Glyph));
 		term.alt[i] = xmalloc(col * sizeof(Glyph));
+		memset(term.line[i], 0, col * sizeof(Glyph));
+		memset(term.alt[i], 0, col * sizeof(Glyph));
 	}
 	if (col > term.col) {
 		bp = term.tabs + term.col;
