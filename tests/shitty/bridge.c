@@ -6,10 +6,12 @@
 #include "../test_terminal.c"
 #undef main
 
-static unsigned int frontend_mode;
+#define frontend_mode (session_view(session_current())->mode)
 static int palette_unavailable;
-static int cursor_style = 1, bells;
-static char *title, *icon;
+#define cursor_style (session_view(session_current())->cursor)
+static int bells;
+#define title (session_view(session_current())->title)
+#define icon (session_view(session_current())->icon)
 void xbell(void) { bells++; }
 void xclipcopy(void) { copies++; }
 void xpastecancel(void) {}
@@ -28,18 +30,38 @@ void xsetsel(char *s) { free(clipboard); clipboard=s; }
 int xstartdraw(void) { return 1; }
 void xximspot(int x,int y) {}
 
-static char *replies;
-static size_t replies_len;
+typedef struct Peer { uint64_t id; int fd; char *bytes; size_t length; struct Peer *next; } Peer;
+static Peer *peers;
+static Peer *peer(Session *s) {
+    uint64_t id=session_view(s)->id;
+    for(Peer *p=peers;p;p=p->next)if(p->id==id)return p;
+    int fds[2];assert(socketpair(AF_UNIX,SOCK_STREAM,0,fds)==0);
+    fcntl(fds[0],F_SETFL,O_NONBLOCK);fcntl(fds[1],F_SETFL,O_NONBLOCK);
+    s->ptyfd=fds[0];
+    Peer *p=calloc(1,sizeof(*p));assert(p);
+    p->id=id;p->fd=fds[1];p->next=peers;peers=p;return p;
+}
 static unsigned unhex(char c) {
     if(c>='0' && c<='9')return c-'0';
     if(c>='a' && c<='f')return c-'a'+10;
     assert(0);return 0;
 }
-static void drain(int fd) {
-    char buf[4096];ssize_t n;
-    while((n=read(fd,buf,sizeof buf))>0) {
-        replies=xrealloc(replies,replies_len+n);
-        memcpy(replies+replies_len,buf,n);replies_len+=n;
+static void drain(Session *s) {
+    Peer *p=peer(s);char buf[4096];ssize_t n;
+    do {
+        session_flush(s);
+        while((n=read(p->fd,buf,sizeof buf))>0) {
+            p->bytes=xrealloc(p->bytes,p->length+n);
+            memcpy(p->bytes+p->length,buf,n);p->length+=n;
+        }
+    } while(session_pending(s));
+}
+static void feedhex(Session *s,const char *hex) {
+    size_t n=strcspn(hex,"\r\n")/2; char bytes[64];
+    for(size_t pos=0;pos<n;) {
+        size_t len=MIN(sizeof bytes,n-pos);
+        for(size_t i=0;i<len;i++)bytes[i]=(unhex(hex[2*(pos+i)])<<4)|unhex(hex[2*(pos+i)+1]);
+        session_feed(s,bytes,len);drain(s);pos+=len;
     }
 }
 static void hexout(const char *s, size_t n) {
@@ -49,8 +71,8 @@ static void hexout(const char *s, size_t n) {
 }
 static void cellout(Glyph g) { printf("[%u,%u,%u,%u]",g.u,g.mode,g.fg,g.bg); }
 static void dump(int model) {
-    printf("{\"columns\":%d,\"rows\":%d,\"cursor_x\":%d,\"cursor_y\":%d,\"cursor_style\":%d,\"view_offset\":%d,\"mode\":%d,\"frontend\":%u,\"pending\":%d,\"origin\":%d,\"top\":%d,\"bottom\":%d,\"history\":%d,\"bells\":%d,\"selection\":[%d,%d,%d,%d],\"rectangular_selection\":%d,\"pen\":",
-        term.col,term.row,term.c.x,term.c.y,cursor_style,term.scr,term.mode,frontend_mode,
+    printf("{\"session_id\":%llu,\"columns\":%d,\"rows\":%d,\"cursor_x\":%d,\"cursor_y\":%d,\"cursor_style\":%d,\"view_offset\":%d,\"mode\":%d,\"frontend\":%u,\"pending\":%d,\"origin\":%d,\"top\":%d,\"bottom\":%d,\"history\":%d,\"bells\":%d,\"selection\":[%d,%d,%d,%d],\"rectangular_selection\":%d,\"pen\":",
+        (unsigned long long)session_view(session_current())->id,term.col,term.row,term.c.x,term.c.y,cursor_style,term.scr,term.mode,frontend_mode,
         !!(term.c.state & CURSOR_WRAPNEXT),!!(term.c.state & CURSOR_ORIGIN),term.top,term.bot,term.histlen,bells,
         sel.ob.x==-1?-1:sel.nb.x,sel.ob.x==-1?-1:sel.nb.y,sel.ob.x==-1?-1:sel.ne.x,sel.ob.x==-1?-1:sel.ne.y,sel.type==SEL_RECTANGULAR);
     cellout(term.c.attr);
@@ -67,50 +89,55 @@ static void dump(int model) {
 }
 int main(int argc,char **argv) {
     if(argc!=3) return 2;
-    int pair[2];
-    assert(socketpair(AF_UNIX,SOCK_STREAM,0,pair)==0);
-    cmdfd=pair[0]; fcntl(pair[1],F_SETFL,O_NONBLOCK);
     init(atoi(argv[1]),atoi(argv[2]));
-    iofd=open("/dev/null",O_WRONLY); assert(iofd>=0);
-    char *line=NULL, *pending=NULL; size_t cap=0, pendinglen=0;
+    peer(session_current());
+    iofd=open("/dev/null",O_WRONLY);assert(iofd>=0);
+    char *line=NULL;size_t cap=0;int focused=0;
     puts("{}"); fflush(stdout);
     while(getline(&line,&cap,stdin)>0) {
         int a=0,b=0,c=0,d=0;
         sscanf(line+1,"%d %d %d %d",&a,&b,&c,&d);
         switch(line[0]) {
-        case 'W': {
-            size_t n=strcspn(line+2,"\r\n")/2;
-            pending=xrealloc(pending,pendinglen+n+1);
-            for(size_t i=0;i<n;i++) { pending[pendinglen+i]=(unhex(line[2+2*i])<<4)|unhex(line[3+2*i]); }
-            pendinglen+=n;
+        case 'W':
             memset(term.dirty,0,term.row*sizeof(*term.dirty));
-            size_t pos=0;
-            while(pos<pendinglen) {
-                size_t used=twrite(pending+pos,MIN(pendinglen-pos,64),0);
-                if(!used)break;
-                pos+=used;drain(pair[1]);
-            }
-            pendinglen-=pos; memmove(pending,pending+pos,pendinglen);
+            feedhex(session_current(),line+2);
             puts(palette_unavailable ? "{\"unsupported\":\"dynamic Xft palette requires a real display; headless callback unavailable\"}" : "null"); break;
+        case 'w': {
+            int offset=0;sscanf(line+2,"%d %n",&a,&offset);
+            Session *s=session_at(a);assert(s);feedhex(s,line+2+offset);puts("null");break;
         }
+        case 'N': {
+            Session *s=session_new(term.col,term.row);assert(s);peer(s);
+            session_switch(s,focused);puts("null");break;
+        }
+        case 'L': {
+            Session *s=session_at(a);assert(s);int wasactive=s==session_active();
+            session_close(s);assert(session_count());
+            if(wasactive && focused && (frontend_mode & MODE_FOCUS))ttywrite("\033[I",3,0);
+            puts("null");break;
+        }
+        case 'Z': assert(session_at(a));session_switch(session_at(a),focused);puts("null");break;
+        case 'Y': printf("[%zu,%zu]\n",session_count(),session_index(session_active()));break;
+        case 'F': focused=a;puts("null");break;
+        case 'P': draw();puts("null");break;
         case 'J': {
             size_t n=strcspn(line+2,"\r\n")/2;
             char *buf=xmalloc(n+1);
             for(size_t i=0;i<n;i++) { buf[i]=(unhex(line[2+2*i])<<4)|unhex(line[3+2*i]); }
-            for(size_t pos=0;pos<n;pos+=1024) { ttywrite(buf+pos,MIN(n-pos,1024),1);drain(pair[1]); } free(buf); puts("null"); break;
+            for(size_t pos=0;pos<n;pos+=1024) { ttywrite(buf+pos,MIN(n-pos,1024),1);drain(session_current()); } free(buf); puts("null"); break;
         }
         case 'S': dump(a); break;
         case 'O': allowwindowops=a; puts("null"); break;
-        case 'R': tresize(a,b); puts("null"); break;
+        case 'R': { Session *old=session_current(); for(Session *s=head;s;s=s->next){session_bind(s);tresize(a,b);}session_bind(old);puts("null");break; }
         case 'U': kscrollup(&(Arg){.i=a}); puts("null"); break;
         case 'D': kscrolldown(&(Arg){.i=a}); puts("null"); break;
-        case 'I': drain(pair[1]); hexout(replies,replies_len); replies_len=0; break;
+        case 'I': { Session *s=line[1]==' '?session_at(a):session_current();assert(s);drain(s);Peer *p=peer(s);hexout(p->bytes,p->length);p->length=0;break; }
         case 'B': LIMIT(a,0,term.col-1); LIMIT(b,0,term.row-1); selstart(a,b,c); puts("null"); break;
         case 'E': LIMIT(a,0,term.col-1); LIMIT(b,0,term.row-1); selextend(a,b,c,d); puts("null"); break;
         case 'V': if(a>=0 && a<term.row) term.line[a][term.col-1].mode|=ATTR_WRAP; puts("null"); break;
         case 'C': selclear(); puts("null"); break;
         case 'G': { char *s=getsel(); hexout(s?s:"",s?strlen(s):0); free(s); break; }
-        case 'T': hexout(title?title:"st",strlen(title?title:"st")); break;
+        case 'T': { const char *raw=title?title:"st";size_t size=strlen(raw)+80;char *name=xmalloc(size);if(session_count()>1)snprintf(name,size,"[%zu/%zu] %s",session_index(session_active())+1,session_count(),raw);else snprintf(name,size,"%s",raw);hexout(name,strlen(name));free(name);break; }
         case 'A':
             putchar('[');
             for(int y=0;y<term.histlen+term.row;y++) {
@@ -127,6 +154,7 @@ int main(int argc,char **argv) {
         fflush(stdout);
     }
 done:
-    free(line); free(pending); free(title); free(icon);free(replies);close(iofd);
-    cleanup(); close(pair[0]); close(pair[1]); return 0;
+    free(line);cleanup();
+    while(peers){Peer *p=peers;peers=p->next;close(p->fd);free(p->bytes);free(p);}
+    return 0;
 }

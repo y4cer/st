@@ -18,7 +18,7 @@ int main(void) {
         unsigned mode=0,mods=0; unsigned long sym=0; char op;
         int offset=0;
         assert(sscanf(line,"%c %u %u %lu %n",&op,&mode,&mods,&sym,&offset)>=4);
-        win.mode=mode; delivered_len=0;
+        win.mode=mode; delivered_len=0; test_session.length=0;
         if(op=='K') {
             input_key=sym; input_length=0;
             char *hex=line+offset;
@@ -30,7 +30,7 @@ int main(void) {
             /* UI shortcuts are not terminal input and require a real window. */
             int shortcut=0;
             for(size_t i=0;i<LEN(shortcuts);i++)
-                if(input_key==shortcuts[i].keysym && match(shortcuts[i].mod,mods)) shortcut=1;
+                if(shortcut_enabled(&shortcuts[i]) && input_key==shortcuts[i].keysym && match(shortcuts[i].mod,mods)) shortcut=1;
             if(shortcut) { puts("null"); fflush(stdout); continue; }
             XEvent event={0}; event.xkey.state=mods; kpress(&event);
         } else if(op=='F') {

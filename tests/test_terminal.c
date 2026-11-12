@@ -12,6 +12,7 @@ int allowaltscreen = 1, allowwindowops = 0;
 unsigned int tabspaces = 8, defaultfg = 258, defaultbg = 259, defaultcs = 256;
 static char *clipboard;
 static int copies, flash_cells;
+void xsessionfree(Session *s) { (void)s; }
 #ifndef ST_REFERENCE_BRIDGE
 void xbell(void) {}
 void xclipcopy(void)
@@ -567,6 +568,124 @@ static void wide_resize(void)
     wide_integrity(term.line[0], 6);
     roweq(0, "abc");
 }
+static void resize_bottom_history(void)
+{
+    init(8, 3);
+    feed("1\r\n2\r\n3\r\n4\r\n5");
+    tresize(8, 5);
+    for (int y = 0; y < 5; y++) assert(term.line[y][0].u == (Rune)('1' + y));
+    assert(term.c.y == 4 && term.histlen == 0);
+    feed("\r\n6");
+    roweq(4, "6");
+    assert(term.histlen == 1);
+}
+static void resize_bottom_without_history(void)
+{
+    init(8, 3);
+    feed("one\r\ntwo\r\nthree");
+    tresize(8, 6);
+    roweq(0, ""); roweq(2, "");
+    roweq(3, "one"); roweq(4, "two"); roweq(5, "three");
+    assert(term.c.y == 5 && term.histlen == 0);
+    tresize(8, 3);
+    roweq(0, "one"); roweq(1, "two"); roweq(2, "three");
+    assert(term.histlen == 0 && term.resizepad == 0);
+    tresize(8, 6); feed("\033[HX\033[6;1H");
+    tresize(8, 3);
+    assert(term.histlen == 3);
+    kscrollup(&(Arg){.i=3});
+    assert(TLINE(0)[0].u == 'X');
+}
+static void resize_short_output(void)
+{
+    init(8, 5); feed("hello\r\n> ");
+    tresize(8, 9);
+    roweq(0, "hello"); roweq(1, ">");
+    assert(term.c.y == 1 && term.histlen == 0);
+}
+static void resize_bottom_roundtrip(void)
+{
+    init(8, 5); feed("1\r\n2\r\n3\r\n4\r\n5");
+    for (int i = 0; i < 20; i++) {
+        tresize(8, 2);
+        roweq(0, "4"); roweq(1, "5");
+        assert(term.histlen == 3 && term.c.y == 1);
+        tresize(8, 5);
+        for (int y = 0; y < 5; y++) assert(term.line[y][0].u == (Rune)('1' + y));
+        assert(term.histlen == 0 && term.c.y == 4);
+    }
+}
+static void resize_bottom_alt(void)
+{
+    init(8, 3); feed("main\033[?1049h\033[HA\r\nB\r\nC");
+    tresize(8, 5);
+    roweq(0, "A"); roweq(2, "C"); roweq(4, "");
+    assert(term.c.y == 2 && term.histlen == 0);
+    feed("\033[?1049l"); roweq(0, "main");
+}
+static void resize_bottom_saved_cursor(void)
+{
+    init(8, 3); feed("1\r\n2\r\n3\0337");
+    tresize(8, 5); feed("\033[H\0338");
+    assert(term.c.y == 4);
+    tresize(8, 2); feed("\033[H\0338");
+    assert(term.c.y == 1);
+}
+static void resize_bottom_scrolled(void)
+{
+    init(8, 3); feed("1\r\n2\r\n3\r\n4\r\n5\r\n6");
+    kscrollup(&(Arg){.i=2});
+    assert(TLINE(0)[0].u == '2');
+    tresize(8, 2);
+    assert(term.scr == 3 && TLINE(0)[0].u == '2');
+    tresize(8, 4);
+    assert(term.scr == 1 && TLINE(0)[0].u == '2');
+}
+static void clear_preserves_output(void)
+{
+    init(10, 4); feed("first\r\n\r\nlast\033[H\033[2J");
+    assert(term.histlen == 3 && term.c.x == 0 && term.c.y == 0);
+    roweq(0, ""); roweq(3, "");
+    kscrollup(&(Arg){.i=3});
+    assert(TLINE(0)[0].u == 'f' && TLINE(1)[0].u == ' ' && TLINE(2)[0].u == 'l');
+    feed("\033[2J"); /* Clearing an empty viewport adds no duplicate rows. */
+    assert(term.histlen == 3);
+}
+static void clear_keeps_cursor_and_margins(void)
+{
+    init(8, 4); feed("one\r\ntwo\r\nthree\033[2;3r\033[2;4H\033[2J");
+    assert(term.histlen == 3 && term.c.x == 3 && term.c.y == 1);
+    assert(term.top == 1 && term.bot == 2);
+}
+static void clear_alternate_and_partial(void)
+{
+    init(8, 3); feed("one\r\ntwo\033[1;2H\033[J");
+    assert(term.histlen == 0);
+    feed("\033[?1049h\033[HALT\033[2J");
+    assert(term.histlen == 0); roweq(0, "");
+    feed("\033[?1049l"); roweq(0, "o");
+}
+static void clear_after_resize_padding(void)
+{
+    init(8, 2); feed("one\r\ntwo"); tresize(8, 5);
+    assert(term.resizepad == 3);
+    feed("\033[H\033[2J");
+    assert(term.histlen == 2 && term.resizepad == 0);
+    kscrollup(&(Arg){.i=2});
+    assert(TLINE(0)[0].u == 'o' && TLINE(1)[0].u == 't');
+}
+static void clear_ring_and_attributes(void)
+{
+    init(8, 2);
+    for (int i = 0; i < HISTSIZE + 3; i++)
+        feed("\033[H\033[31m界X\033[0m\033[2J");
+    assert(term.histlen == HISTSIZE);
+    kscrollup(&(Arg){.i=1});
+    assert(TLINE(0)[0].u == 0x754c && TLINE(0)[0].fg == 1);
+    assert(TLINE(0)[0].mode & ATTR_WIDE);
+    assert(TLINE(0)[1].mode & ATTR_WDUMMY);
+    assert(TLINE(0)[2].u == 'X');
+}
 static void parser_chunking(void)
 {
     init(8, 3);
@@ -636,21 +755,10 @@ static void deterministic_stress(void)
 }
 static void cleanup(void)
 {
-    if (browseactive())
-        browseclose();
-    for (int i = 0; i < term.row; i++) {
-        free(term.line[i]);
-        free(term.alt[i]);
-    }
-    for (int i = 0; i < HISTSIZE; i++)
-        free(term.hist[i]);
-    free(term.line);
-    free(term.alt);
-    free(term.tabs);
-    free(term.dirty);
-    free(strescseq.buf);
+    sessions_free();
     free(clipboard);
 }
+
 struct test {
     const char *name;
     void (*run)(void);
@@ -659,6 +767,12 @@ struct test {
     T(yank_flash), T(deterministic_stress),  T(copy_wide_search),   T(selection_resize),
     T(selection_rectangle),   T(copy_wrapped_space), T(wide_erase),
     T(wide_delete),           T(wide_insert),        T(wide_resize),
+    T(resize_bottom_history), T(resize_bottom_without_history), T(resize_short_output),
+    T(resize_bottom_roundtrip), T(resize_bottom_alt), T(resize_bottom_saved_cursor),
+    T(resize_bottom_scrolled),
+    T(clear_preserves_output), T(clear_keeps_cursor_and_margins),
+    T(clear_alternate_and_partial), T(clear_after_resize_padding),
+    T(clear_ring_and_attributes),
     T(parser_chunking),       T(delayed_wrap),       T(reset_defaults),
     T(margins_home),          T(margins_default),    T(margins_clamp),
     T(margins_scrollup),      T(margins_scrolldown), T(insert_outside),

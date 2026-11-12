@@ -13,8 +13,7 @@ group('st has no OSC 8 hyperlink or URI opening subsystem',
 group('st has no shell semantic annotations / prompt metadata',
       'row_semantic semantic_click cursor_at_prompt classify_tool_call classify_user_text attach_annotation save_annotation_state reset_preserving_prompt current_cwd')
 group('st has no Kitty keyboard protocol', 'kitty_key kitty_special protocol_state')
-group('st has no multiple sessions, tabs or embedded multiplexer',
-      'new_session close_session session_state write_to read_input_of chord_prev_tab chord_next_tab chord_close_tab chord_clear tmux_control_events')
+group('st has no embedded tmux control multiplexer', 'tmux_control_events')
 group('Shitty desktop actions/notifications have no st equivalent', 'read_actions desktop_state')
 group('st uses libc wcwidth, without Shitty Unicode table/version APIs', 'measure_widths grapheme_breaks utf8_push utf8_reset')
 group('st has no DEC locator/highlight tracking protocol', 'locator_position locator_button highlight_release')
@@ -56,7 +55,7 @@ def case_reasons(path):
             if isinstance(n,ast.Attribute) and n.attr in FIELDS:reasons.add(FIELDS[n.attr])
             if isinstance(n,ast.Call):
                 name=n.func.attr if isinstance(n.func,ast.Attribute) else n.func.id if isinstance(n.func,ast.Name) else ''
-                if name in API_EXCLUSIONS:reasons.add(API_EXCLUSIONS[name])
+                if name in API_EXCLUSIONS and not (Path(path).stem=='test_tabs' and name in ('present','winsize')):reasons.add(API_EXCLUSIONS[name])
                 if name in functions and name not in seen:
                     reasons.update(inspect(functions[name],seen|{name}))
         return reasons

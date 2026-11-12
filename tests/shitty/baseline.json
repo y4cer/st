@@ -22,8 +22,8 @@
     },
     "test_alacritty_grid_storage.AlacrittyGridStorageTest.test_rotation_followed_by_shrink_keeps_the_newest_logical_tail": {
       "status": "failure",
-      "signature": "12b95f0300a5447b979902c8c5fae4bc6217dd222f6f1bd2edf5b6640fe0fa0e",
-      "reason": "Tuples differ: ('0', '1', '2', '3', '4', '5', '7', '8') != ('4', '5', '6', '7', '8')\n\nFirst differing element 0:\n'0'\n'4'\n\nFirst tuple contains 3 additional elements.\nFirst extra element 5:\n'5'\n\n- ('0', '1', '2', '3', '4', '5', '7', '8')\n+ ('4', '5', '6', '7', '8')"
+      "signature": "10e73eecd8ca50fd15ef13e07c7d27e81383447f365098c7cb4359791ccc3c42",
+      "reason": "Tuples differ: ('0', '1', '2', '3', '4', '5', '6', '7', '8') != ('4', '5', '6', '7', '8')\n\nFirst differing element 0:\n'0'\n'4'\n\nFirst tuple contains 4 additional elements.\nFirst extra element 5:\n'5'\n\n- ('0', '1', '2', '3', '4', '5', '6', '7', '8')\n+ ('4', '5', '6', '7', '8')"
     },
     "test_alacritty_grid_storage.AlacrittyGridStorageTest.test_growing_unrotated_page_appends_blank_visible_capacity": {
       "status": "pass",
@@ -31,13 +31,12 @@
     },
     "test_alacritty_grid_storage.AlacrittyGridStorageTest.test_growing_rotated_page_pulls_history_before_adding_blanks": {
       "status": "failure",
-      "signature": "a01fc1268c2024723ed88f47734342cd9f81652c29533c8f483d334399257ecc",
-      "reason": "1 != 0"
+      "signature": "3acf1d5620408cd4a6bdf33c24a3e2fb2caa77c893929c13ffa75e1399c1a499",
+      "reason": "Tuples differ: ('', '0', '1', '2', '3') != ('0', '1', '2', '3', '')\n\nFirst differing element 0:\n''\n'0'\n\n- ('', '0', '1', '2', '3')\n?  ----\n\n+ ('0', '1', '2', '3', '')\n?                    ++++\n"
     },
     "test_alacritty_grid_storage.AlacrittyGridStorageTest.test_shrinking_at_bottom_moves_evicted_prefix_into_history": {
-      "status": "failure",
-      "signature": "208b11c9f5cecc2c6ef2b40a7f503131366366a80216bded324b35d1d225f26f",
-      "reason": "0 != 2"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_alacritty_grid_storage.AlacrittyGridStorageTest.test_shrinking_unused_tail_keeps_top_content_without_history": {
       "status": "pass",
@@ -58,9 +57,8 @@
       "reason": "3 != 0"
     },
     "test_alacritty_grid_storage.AlacrittyGridStorageTest.test_shrink_then_grow_reuses_history_in_logical_order": {
-      "status": "failure",
-      "signature": "d1fbdd3458e3e6825606c61e3d5f5c0fb59edd2f55c91740eaf1eb7704f99bf7",
-      "reason": "Tuples differ: ('D', 'E', 'F', '') != ('C', 'D', 'E', 'F')\n\nFirst differing element 0:\n'D'\n'C'\n\n- ('D', 'E', 'F', '')\n?               ----\n\n+ ('C', 'D', 'E', 'F')\n?  +++++\n"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_alacritty_grid_storage.AlacrittyGridStorageTest.test_later_growth_initializes_rows_after_history_capacity_was_full": {
       "status": "failure",
@@ -319,8 +317,8 @@
     },
     "test_alacritty_terminal_core.AlacrittyTerminalCoreTest.test_view_anchor_survives_clear_outside_selected_history": {
       "status": "failure",
-      "signature": "6e22adcdc1f649f72589fe0d60e50fa7809936e920b8b89d730b8aea70ed8880",
-      "reason": "b'' != b'0000'"
+      "signature": "31dfade98da4ebf5089e5d05109fce84477daa6f767faa9075f60318bbc91bf0",
+      "reason": "15 != 5"
     },
     "test_alacritty_terminal_core.AlacrittyTerminalCoreTest.test_clearing_scrollback_resets_display_offset": {
       "status": "failure",
@@ -344,8 +342,8 @@
     },
     "test_alacritty_terminal_core.AlacrittyTerminalCoreTest.test_growing_active_screen_pulls_history_and_moves_cursor": {
       "status": "failure",
-      "signature": "9a8b46a593a41e9dce748a26d450b3948ec30c5a9b072c6625242a78b26f4a21",
-      "reason": "10 != 0"
+      "signature": "c7f49a650a15615cb6ec4926d5f3b0ac3b353d3db9d49d6d75cc01bae7c4a500",
+      "reason": "29 != 19"
     },
     "test_alacritty_terminal_core.AlacrittyTerminalCoreTest.test_growing_inactive_primary_screen_updates_saved_cursor": {
       "status": "failure",
@@ -353,9 +351,8 @@
       "reason": "10 != 0"
     },
     "test_alacritty_terminal_core.AlacrittyTerminalCoreTest.test_shrinking_active_screen_pushes_rows_to_history": {
-      "status": "failure",
-      "signature": "839d4e11e8f125f21f68e8c41102cc7440af879c2d71620aa631351ea26af432",
-      "reason": "10 != 15"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_alacritty_terminal_core.AlacrittyTerminalCoreTest.test_shrinking_inactive_primary_screen_updates_saved_cursor": {
       "status": "failure",
@@ -919,8 +916,8 @@
     },
     "test_contour_grid.ContourGridTest.test_height_growth_restores_history_and_appends_blanks": {
       "status": "failure",
-      "signature": "f6c86584b608c6dd96602f661524becb3823e8321ad4d362afde465084458218",
-      "reason": "Tuples differ: ('ABC', 'DEF', 'GHI', 'JKL', '', '', '') != ('ABC', 'DEF', 'GHI', 'JKL', '')\n\nFirst tuple contains 2 additional elements.\nFirst extra element 5:\n''\n\n- ('ABC', 'DEF', 'GHI', 'JKL', '', '', '')\n?                              --------\n\n+ ('ABC', 'DEF', 'GHI', 'JKL', '')"
+      "signature": "d22a63a1f400fb7a6c01f4aeba266e1e49b7eb1572167b9a7c4043c7387f3e73",
+      "reason": "Tuples differ: ('', 'ABC', 'DEF', 'GHI', 'JKL') != ('ABC', 'DEF', 'GHI', 'JKL', '')\n\nFirst differing element 0:\n''\n'ABC'\n\n- ('', 'ABC', 'DEF', 'GHI', 'JKL')\n?  ----\n\n+ ('ABC', 'DEF', 'GHI', 'JKL', '')\n?                            ++++\n"
     },
     "test_contour_grid.ContourGridTest.test_height_growth_uses_the_bottom_anchored_policy": {
       "status": "failure",
@@ -928,14 +925,13 @@
       "reason": "Tuples differ: ('ABC', 'DEF', 'GHI', 'JKL', '') != ('ABC', 'DEF', 'GHI', 'JKL')\n\nFirst tuple contains 1 additional elements.\nFirst extra element 4:\n''\n\n- ('ABC', 'DEF', 'GHI', 'JKL', '')\n?                            ----\n\n+ ('ABC', 'DEF', 'GHI', 'JKL')"
     },
     "test_contour_grid.ContourGridTest.test_height_shrink_moves_only_rows_above_cursor_to_history": {
-      "status": "failure",
-      "signature": "542e0cd4ab56b5f3d58e23d84b3849088fa69a0682f6ffd079855ca9e2c66a88",
-      "reason": "Tuples differ: ('ABC', 'GHI') != ('ABC', 'DEF', 'GHI')\n\nFirst differing element 1:\n'GHI'\n'DEF'\n\nSecond tuple contains 1 additional elements.\nFirst extra element 2:\n'GHI'\n\n- ('ABC', 'GHI')\n+ ('ABC', 'DEF', 'GHI')\n?         +++++++\n"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_contour_grid.ContourGridTest.test_hard_lines_are_reflowed_but_never_joined": {
       "status": "failure",
-      "signature": "21c17614bd163695b03a3471ce52fef9acff45879e447289584ad212cc01fee4",
-      "reason": "Tuples differ: ('AB', 'DE', 'GH', 'JK', '', '') != ('AB', 'C', 'DE', 'F', 'GH', 'I', 'JK', 'L')\n\nFirst differing element 1:\n'DE'\n'C'\n\nSecond tuple contains 2 additional elements.\nFirst extra element 6:\n'JK'\n\n- ('AB', 'DE', 'GH', 'JK', '', '')\n+ ('AB', 'C', 'DE', 'F', 'GH', 'I', 'JK', 'L')"
+      "signature": "42cc7af1ce57edc33910cdb51f0c328456dde20bfe7fa19afb268f4d26e56410",
+      "reason": "Tuples differ: ('AB', 'DE', 'GH', 'JK') != ('AB', 'C', 'DE', 'F', 'GH', 'I', 'JK', 'L')\n\nFirst differing element 1:\n'DE'\n'C'\n\nSecond tuple contains 4 additional elements.\nFirst extra element 4:\n'GH'\n\n- ('AB', 'DE', 'GH', 'JK')\n+ ('AB', 'C', 'DE', 'F', 'GH', 'I', 'JK', 'L')"
     },
     "test_contour_grid.ContourGridTest.test_reflow_shrink_and_regrow_are_exactly_reversible": {
       "status": "failure",
@@ -1734,8 +1730,8 @@
     },
     "test_contour_screen.ContourScreenTest.test_unscroll_via_page_growth": {
       "status": "failure",
-      "signature": "ae5e56aa6b92f62a4412413b2334b8972f8e2b2b230617722d13b35c0716aa0e",
-      "reason": "3 != 1"
+      "signature": "55f32e669282580e5edc9ffa91c70b5c0cc625ebeec386d218fc7fa4f383371e",
+      "reason": "Lists differ: ['     ', '     ', 'AAAAA', 'BBBBB', 'CCCCC[33 chars]GGG'] != ['AAAAA', 'BBBBB', 'CCCCC', 'DDDDD', 'EEEEE[33 chars]   ']\n\nFirst differing element 0:\n'     '\n'AAAAA'\n\n- ['     ',\n-  '     ',\n-  'AAAAA',\n? ^\n\n+ ['AAAAA',\n? ^\n\n   'BBBBB',\n   'CCCCC',\n   'DDDDD',\n   'EEEEE',\n   'FFFFF',\n-  'GGGGG']\n?         ^\n\n+  'GGGGG',\n?         ^\n\n+  '     ',\n+  '     ']"
     },
     "test_contour_screen.ContourScreenTest.test_sequence_cuu": {
       "status": "failure",
@@ -2196,8 +2192,8 @@
     },
     "test_contour_screen.ContourScreenTest.test_resize_source_contour_scenario": {
       "status": "failure",
-      "signature": "57e21f48d5bf9c6121b3331cad67a2f3ba07fa64ab2f2d40f84690b6f96e6269",
-      "reason": "Lists differ: ['ABX', 'CY '] != ['ABX', 'CDY']\n\nFirst differing element 1:\n'CY '\n'CDY'\n\n- ['ABX', 'CY ']\n?            -\n\n+ ['ABX', 'CDY']\n?           +\n"
+      "signature": "00869aa4784424419bbc5fe62f08dfdc7273ab3638943d3c2814154ecbba9fd4",
+      "reason": "Lists differ: ['  ', 'AB', 'CD'] != ['AB', 'CD', '  ']\n\nFirst differing element 0:\n'  '\n'AB'\n\n- ['  ', 'AB', 'CD']\n+ ['AB', 'CD', '  ']"
     },
     "test_contour_screen.ContourScreenTest.test_deccra_down_left_intersecting_contour_scenario": {
       "status": "excluded",
@@ -6023,8 +6019,8 @@
     },
     "test_ghostty_binding_set_sequences.GhosttyBindingSetSequencesTest.test_unconsumed_binding_runs_action_and_forwards_original_key": {
       "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "signature": "2aa679aa9201e5bb582c6976d3da5392ff0afa34334531b3ab83fbb961979cd1",
+      "reason": "Shitty-specific launch options: ('-remap', 'unconsumed:ctrl+a=new_tab')"
     },
     "test_ghostty_binding_set_sequences.GhosttyBindingSetSequencesTest.test_removed_binding_no_longer_routes_its_sequence": {
       "status": "excluded",
@@ -7625,13 +7621,14 @@
       "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_ghostty_pagelist_clone_resize.GhosttyPageListCloneResizeTest.test_no_reflow_height_growth_keeps_existing_rows_and_cursor": {
-      "status": "pass",
-      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+      "status": "failure",
+      "signature": "204619a65bffda70884973435d9c020e765b39dd888db7abebeeef716a169d09",
+      "reason": "Tuples differ: ('', '', '', '', '', '', '', '000', '001', '002') != ('000', '001', '002')\n\nFirst differing element 0:\n''\n'000'\n\nFirst tuple contains 7 additional elements.\nFirst extra element 3:\n''\n\n- ('', '', '', '', '', '', '', '000', '001', '002')\n+ ('000', '001', '002')"
     },
     "test_ghostty_pagelist_clone_resize.GhosttyPageListCloneResizeTest.test_no_reflow_height_growth_pulls_history_above_a_bottom_cursor": {
       "status": "failure",
-      "signature": "55df5788f5d363d8c67748fccf48dc4768f4b1939a5fdde5ef49053a5316b108",
-      "reason": "Tuples differ: ('002', '003', '004') != ('000', '001', '002', '003', '004')\n\nFirst differing element 0:\n'002'\n'000'\n\nSecond tuple contains 2 additional elements.\nFirst extra element 3:\n'003'\n\n- ('002', '003', '004')\n+ ('000', '001', '002', '003', '004')\n?  ++++++++++++++\n"
+      "signature": "5c0e13b432b1bb78e2afeff4cc11997050b952a8b43ce89bf24fc51bb7f3714c",
+      "reason": "Tuples differ: ('', '', '', '', '', '000', '001', '002', '003', '004') != ('000', '001', '002', '003', '004')\n\nFirst differing element 0:\n''\n'000'\n\nFirst tuple contains 5 additional elements.\nFirst extra element 5:\n'000'\n\n- ('', '', '', '', '', '000', '001', '002', '003', '004')\n?  --------------------\n\n+ ('000', '001', '002', '003', '004')"
     },
     "test_ghostty_pagelist_clone_resize.GhosttyPageListCloneResizeTest.test_no_reflow_height_shrink_keeps_the_rows_nearest_the_cursor": {
       "status": "pass",
@@ -7647,8 +7644,8 @@
     },
     "test_ghostty_pagelist_clone_resize.GhosttyPageListCloneResizeTest.test_selection_anchor_can_move_from_active_screen_into_scrollback": {
       "status": "failure",
-      "signature": "b328af837ea42872b4227dd2683a18f26329956a97b3459b2b267952aa1e74ab",
-      "reason": "Tuples differ: ('005', '006', '007') != ('000', '001', '002')\n\nFirst differing element 0:\n'005'\n'000'\n\n- ('005', '006', '007')\n?     ^      ^      ^\n\n+ ('000', '001', '002')\n?     ^      ^      ^\n"
+      "signature": "a7fd412bfb94a07b0b7b605ea13ed1c593b2f9e711f8d21340f28bb81243bd3e",
+      "reason": "b'' != b'002'"
     },
     "test_ghostty_pagelist_clone_resize.GhosttyPageListCloneResizeTest.test_no_reflow_shrink_trims_background_only_trailing_rows": {
       "status": "pass",
@@ -7673,9 +7670,8 @@
       "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_ghostty_pagelist_compression.GhosttyPageListCompressionTest.test_active_boundary_growth_and_shrink_preserve_content": {
-      "status": "failure",
-      "signature": "cb6e24e3b6f1631eeb9193e371acc9ce89d5296c449d4caa64f60a7b88699bb2",
-      "reason": "Tuples differ: ('6', '7', '8', '', '', '', '', '') != ('1', '2', '3', '4', '5', '6', '7', '8')\n\nFirst differing element 0:\n'6'\n'1'\n\n- ('6', '7', '8', '', '', '', '', '')\n+ ('1', '2', '3', '4', '5', '6', '7', '8')"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_ghostty_pagelist_compression.GhosttyPageListCompressionTest.test_bounded_history_reuses_storage_without_exposing_old_rows": {
       "status": "failure",
@@ -7740,9 +7736,8 @@
       "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_ghostty_pagelist_compression.GhosttyPageListCompressionTest.test_history_made_active_by_height_growth_is_restored_on_demand": {
-      "status": "failure",
-      "signature": "cb6e24e3b6f1631eeb9193e371acc9ce89d5296c449d4caa64f60a7b88699bb2",
-      "reason": "Tuples differ: ('6', '7', '8', '', '', '', '', '') != ('1', '2', '3', '4', '5', '6', '7', '8')\n\nFirst differing element 0:\n'6'\n'1'\n\n- ('6', '7', '8', '', '', '', '', '')\n+ ('1', '2', '3', '4', '5', '6', '7', '8')"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_ghostty_pagelist_compression.GhosttyPageListCompressionTest.test_viewport_spanning_storage_boundaries_is_stable": {
       "status": "pass",
@@ -7921,8 +7916,8 @@
     },
     "test_ghostty_pagelist_limits.GhosttyPageListLimitsTest.test_history_limit_remains_enforced_across_resize_and_sessions": {
       "status": "failure",
-      "signature": "35f9319409b6931ea73de495c02be55bfece32ad056a4e020c54ffe4b43b6002",
-      "reason": "16 not less than or equal to 5"
+      "signature": "90c3db1f2158fe01b2fe6ba586b4606167abf2be28cfca578c4ea08c7350163f",
+      "reason": "18 not less than or equal to 5"
     },
     "test_ghostty_pagelist_limits.GhosttyPageListLimitsTest.test_pruning_an_anchored_oldest_row_clamps_viewport_to_new_top": {
       "status": "failure",
@@ -8260,8 +8255,8 @@
     },
     "test_ghostty_pagelist_resize_no_reflow.GhosttyPageListResizeNoReflowTest.test_height_growth_contains_a_previously_parked_viewport": {
       "status": "failure",
-      "signature": "8581833f4ec9edeef3ad7f226c47ae0f644fcc6cae87576dde5a01c7e0ce8b0e",
-      "reason": "Tuples differ: ('001', '002', '003', '004', '005') != ('000', '001', '002', '003', '004', '005')\n\nFirst differing element 0:\n'001'\n'000'\n\nSecond tuple contains 1 additional elements.\nFirst extra element 5:\n'005'\n\n- ('001', '002', '003', '004', '005')\n+ ('000', '001', '002', '003', '004', '005')\n?  +++++++\n"
+      "signature": "808b44a69177049e357b0cea3f879e7986e21065afcac7a84bb9cdcfae25fcbc",
+      "reason": "Tuples differ: ('', '000', '001', '002', '003', '004', '005') != ('000', '001', '002', '003', '004', '005')\n\nFirst differing element 0:\n''\n'000'\n\nFirst tuple contains 1 additional elements.\nFirst extra element 6:\n'005'\n\n- ('', '000', '001', '002', '003', '004', '005')\n?  ----\n\n+ ('000', '001', '002', '003', '004', '005')"
     },
     "test_ghostty_pagelist_resize_no_reflow.GhosttyPageListResizeNoReflowTest.test_no_reflow_width_shrink_truncates_each_hard_row": {
       "status": "pass",
@@ -8306,8 +8301,8 @@
     },
     "test_ghostty_pagelist_resize_no_reflow.GhosttyPageListResizeNoReflowTest.test_combined_shrink_keeps_a_near_top_anchor_in_scrollback": {
       "status": "failure",
-      "signature": "2b3f5c4e1ce18fb55ee5e75d0b4fdf24a5a3ed1a03dc91f1c97e8d46ba69faa4",
-      "reason": "'004' != '000'\n- 004\n?   ^\n+ 000\n?   ^\n"
+      "signature": "1c48d45fc46eefb13ae4de04508b9fd0f99c2522fc47c8841bca4ef2861b8738",
+      "reason": "b'' != b'000'"
     },
     "test_ghostty_pagelist_resize_no_reflow.GhosttyPageListResizeNoReflowTest.test_more_rows_and_fewer_columns_preserve_no_reflow_hard_lines": {
       "status": "pass",
@@ -9414,8 +9409,9 @@
       "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_ghostty_screen_resize_history.GhosttyScreenResizeHistoryTest.test_no_reflow_height_growth_preserves_hard_rows": {
-      "status": "pass",
-      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+      "status": "failure",
+      "signature": "6dc9f618be2dc92f0bfef4728bd4b2a792f47e3f006e15516ecf302d52c3fd8f",
+      "reason": "Tuples differ: ('', '', '', '', '', '', '', '1ABCD', '2EFGH', '3IJKL') != ('1ABCD', '2EFGH', '3IJKL')\n\nFirst differing element 0:\n''\n'1ABCD'\n\nFirst tuple contains 7 additional elements.\nFirst extra element 3:\n''\n\n- ('', '', '', '', '', '', '', '1ABCD', '2EFGH', '3IJKL')\n+ ('1ABCD', '2EFGH', '3IJKL')"
     },
     "test_ghostty_screen_resize_history.GhosttyScreenResizeHistoryTest.test_no_reflow_height_shrink_keeps_rows_nearest_cursor": {
       "status": "pass",
@@ -9439,8 +9435,8 @@
     },
     "test_ghostty_screen_resize_history.GhosttyScreenResizeHistoryTest.test_no_reflow_height_growth_recovers_history_at_cursor_end": {
       "status": "failure",
-      "signature": "686661f919335bfe528a0b8efb629ae102c9bb717fb2585fd3259d4a05597367",
-      "reason": "Tuples differ: ('3IJKL', '4ABCD', '5EFGH') != ('1ABCD', '2EFGH', '3IJKL', '4ABCD', '5EFGH')\n\nFirst differing element 0:\n'3IJKL'\n'1ABCD'\n\nSecond tuple contains 2 additional elements.\nFirst extra element 3:\n'4ABCD'\n\n- ('3IJKL', '4ABCD', '5EFGH')\n+ ('1ABCD', '2EFGH', '3IJKL', '4ABCD', '5EFGH')\n?  ++++++++++++++++++\n"
+      "signature": "26e95af068f2b5226355f27680edcfdea6b3bfbdfe611a1767d3a7c96d8900b1",
+      "reason": "Tuples differ: ('', '', '', '', '', '1ABCD', '2EFGH', '3IJKL', '4ABCD', '5EFGH') != ('1ABCD', '2EFGH', '3IJKL', '4ABCD', '5EFGH')\n\nFirst differing element 0:\n''\n'1ABCD'\n\nFirst tuple contains 5 additional elements.\nFirst extra element 5:\n'1ABCD'\n\n- ('', '', '', '', '', '1ABCD', '2EFGH', '3IJKL', '4ABCD', '5EFGH')\n?  --------------------\n\n+ ('1ABCD', '2EFGH', '3IJKL', '4ABCD', '5EFGH')"
     },
     "test_ghostty_screen_resize_history.GhosttyScreenResizeHistoryTest.test_no_reflow_height_shrink_moves_rows_to_history": {
       "status": "pass",
@@ -9452,16 +9448,18 @@
     },
     "test_ghostty_screen_resize_history.GhosttyScreenResizeHistoryTest.test_no_reflow_height_growth_preserves_soft_wrap_flags": {
       "status": "failure",
-      "signature": "6094272de094379e2d7832377338e34f9f3b2740c894ac27ba412ae70bb4cb67",
-      "reason": "Tuples differ: ('4E', '5F', '6G') != ('1A', '2B', '3C', '4E', '5F', '6G')\n\nFirst differing element 0:\n'4E'\n'1A'\n\nSecond tuple contains 3 additional elements.\nFirst extra element 3:\n'4E'\n\n- ('4E', '5F', '6G')\n+ ('1A', '2B', '3C', '4E', '5F', '6G')"
+      "signature": "79c99e3f99eb1c3d0ba659db3b236d48906612439984211b3bcb04d8c4f1c4b7",
+      "reason": "Tuples differ: ('', '', '', '', '1A', '2B', '3C', '4E', '5F', '6G') != ('1A', '2B', '3C', '4E', '5F', '6G')\n\nFirst differing element 0:\n''\n'1A'\n\nFirst tuple contains 4 additional elements.\nFirst extra element 6:\n'3C'\n\n- ('', '', '', '', '1A', '2B', '3C', '4E', '5F', '6G')\n?  ----------------\n\n+ ('1A', '2B', '3C', '4E', '5F', '6G')"
     },
     "test_ghostty_screen_resize_history.GhosttyScreenResizeHistoryTest.test_height_growth_without_scrollback_does_not_move_cursor": {
-      "status": "pass",
-      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+      "status": "failure",
+      "signature": "6dc9f618be2dc92f0bfef4728bd4b2a792f47e3f006e15516ecf302d52c3fd8f",
+      "reason": "Tuples differ: ('', '', '', '', '', '', '', '1ABCD', '2EFGH', '3IJKL') != ('1ABCD', '2EFGH', '3IJKL')\n\nFirst differing element 0:\n''\n'1ABCD'\n\nFirst tuple contains 7 additional elements.\nFirst extra element 3:\n''\n\n- ('', '', '', '', '', '', '', '1ABCD', '2EFGH', '3IJKL')\n+ ('1ABCD', '2EFGH', '3IJKL')"
     },
     "test_ghostty_screen_resize_history.GhosttyScreenResizeHistoryTest.test_height_growth_with_empty_scrollback_does_not_move_cursor": {
-      "status": "pass",
-      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+      "status": "failure",
+      "signature": "6dc9f618be2dc92f0bfef4728bd4b2a792f47e3f006e15516ecf302d52c3fd8f",
+      "reason": "Tuples differ: ('', '', '', '', '', '', '', '1ABCD', '2EFGH', '3IJKL') != ('1ABCD', '2EFGH', '3IJKL')\n\nFirst differing element 0:\n''\n'1ABCD'\n\nFirst tuple contains 7 additional elements.\nFirst extra element 3:\n''\n\n- ('', '', '', '', '', '', '', '1ABCD', '2EFGH', '3IJKL')\n+ ('1ABCD', '2EFGH', '3IJKL')"
     },
     "test_ghostty_screen_resize_history.GhosttyScreenResizeHistoryTest.test_height_growth_with_history_keeps_cursor_on_its_line": {
       "status": "pass",
@@ -9553,13 +9551,13 @@
     },
     "test_ghostty_screen_resize_reflow.GhosttyScreenResizeReflowTest.test_growth_in_both_dimensions_undoes_soft_wraps": {
       "status": "failure",
-      "signature": "ad84856e4f483128e57596a5670b8d64e390fb411943244987f105dad054e98e",
-      "reason": "Tuples differ: ('1A', '2B', '3C', '4D') != ('1A2B', '3C4D')\n\nFirst differing element 0:\n'1A'\n'1A2B'\n\nFirst tuple contains 2 additional elements.\nFirst extra element 2:\n'3C'\n\n- ('1A', '2B', '3C', '4D')\n?     ----        ----\n\n+ ('1A2B', '3C4D')"
+      "signature": "689058bdbc5dccb4e8f37dcff5ecf7bf9668b5d2377af9704364b722225ca588",
+      "reason": "Tuples differ: ('', '', '', '', '', '', '1A', '2B', '3C', '4D') != ('1A2B', '3C4D')\n\nFirst differing element 0:\n''\n'1A2B'\n\nFirst tuple contains 8 additional elements.\nFirst extra element 2:\n''\n\n- ('', '', '', '', '', '', '1A', '2B', '3C', '4D')\n+ ('1A2B', '3C4D')"
     },
     "test_ghostty_screen_resize_reflow.GhosttyScreenResizeReflowTest.test_growth_resolves_pending_wrap_to_the_next_insertion_column": {
       "status": "failure",
-      "signature": "ad84856e4f483128e57596a5670b8d64e390fb411943244987f105dad054e98e",
-      "reason": "Tuples differ: ('1A', '2B', '3C', '4D') != ('1A2B', '3C4D')\n\nFirst differing element 0:\n'1A'\n'1A2B'\n\nFirst tuple contains 2 additional elements.\nFirst extra element 2:\n'3C'\n\n- ('1A', '2B', '3C', '4D')\n?     ----        ----\n\n+ ('1A2B', '3C4D')"
+      "signature": "689058bdbc5dccb4e8f37dcff5ecf7bf9668b5d2377af9704364b722225ca588",
+      "reason": "Tuples differ: ('', '', '', '', '', '', '1A', '2B', '3C', '4D') != ('1A2B', '3C4D')\n\nFirst differing element 0:\n''\n'1A2B'\n\nFirst tuple contains 8 additional elements.\nFirst extra element 2:\n''\n\n- ('', '', '', '', '', '', '1A', '2B', '3C', '4D')\n+ ('1A2B', '3C4D')"
     },
     "test_ghostty_screen_resize_reflow.GhosttyScreenResizeReflowTest.test_height_shrink_without_scrollback_keeps_bottom_content": {
       "status": "failure",
@@ -9575,19 +9573,16 @@
       "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_ghostty_screen_resize_reflow.GhosttyScreenResizeReflowTest.test_height_shrink_with_empty_scrollback_retains_clipped_rows": {
-      "status": "failure",
-      "signature": "666d9d267b8d002d214a1388ac7e8c20a4fa38fd19162d16be0cc6906b96a359",
-      "reason": "Tuples differ: ('3IJKL',) != ('1ABCD', '2EFGH', '3IJKL')\n\nFirst differing element 0:\n'3IJKL'\n'1ABCD'\n\nSecond tuple contains 2 additional elements.\nFirst extra element 1:\n'2EFGH'\n\n- ('3IJKL',)\n+ ('1ABCD', '2EFGH', '3IJKL')"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_ghostty_screen_resize_reflow.GhosttyScreenResizeReflowTest.test_height_shrink_with_history_retains_all_rows": {
-      "status": "failure",
-      "signature": "094209dbaba4af3d41c3656e3d195d0e4a10db26a9e8d570f10ddff149b0f305",
-      "reason": "Tuples differ: ('1ABCD', '2EFGH', '5EFGH') != ('1ABCD', '2EFGH', '3IJKL', '4ABCD', '5EFGH')\n\nFirst differing element 2:\n'5EFGH'\n'3IJKL'\n\nSecond tuple contains 2 additional elements.\nFirst extra element 3:\n'4ABCD'\n\n- ('1ABCD', '2EFGH', '5EFGH')\n+ ('1ABCD', '2EFGH', '3IJKL', '4ABCD', '5EFGH')\n?                    ++++++++++++++++++\n"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_ghostty_screen_resize_reflow.GhosttyScreenResizeReflowTest.test_height_shrink_at_capacity_keeps_cursor_bottom_anchored": {
-      "status": "failure",
-      "signature": "b2c33ce1781c6a2041de7057a6dae4617d4bfc5e73b3898fbda43de8bd45db9d",
-      "reason": "Tuples differ: ('00000', '1ABCD', '2EFGH', '4ABCD', '5EFGH') != ('00000', '1ABCD', '2EFGH', '3IJKL', '4ABCD', '5EFGH')\n\nFirst differing element 3:\n'4ABCD'\n'3IJKL'\n\nSecond tuple contains 1 additional elements.\nFirst extra element 5:\n'5EFGH'\n\n- ('00000', '1ABCD', '2EFGH', '4ABCD', '5EFGH')\n+ ('00000', '1ABCD', '2EFGH', '3IJKL', '4ABCD', '5EFGH')\n?                             +++++++++\n"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_ghostty_screen_resize_reflow.GhosttyScreenResizeReflowTest.test_width_shrink_keeps_short_hard_rows_and_cursor": {
       "status": "pass",
@@ -9638,8 +9633,8 @@
     },
     "test_ghostty_screen_resize_wide_prompt.GhosttyScreenResizeWidePromptTest.test_growing_rows_while_shrinking_columns_reflows_history": {
       "status": "failure",
-      "signature": "efc987a13a4d99883d976b3682b16e50fe564501dbdb8176a2ede9909fa088d3",
-      "reason": "Tuples differ: ('2E', '3I', '4M', '', '', '', '', '', '', '') != ('BC', 'D', '2E', 'FG', 'H3', 'IJ', 'KL', '4M', 'NO', 'P')\n\nFirst differing element 0:\n'2E'\n'BC'\n\n- ('2E', '3I', '4M', '', '', '', '', '', '', '')\n+ ('BC', 'D', '2E', 'FG', 'H3', 'IJ', 'KL', '4M', 'NO', 'P')"
+      "signature": "7299ccb4dba99c377a223c712b609123d17cd6b18a70a47595c2edc0c6220198",
+      "reason": "Tuples differ: ('', '', '', '', '', '', '1A', '2E', '3I', '4M') != ('BC', 'D', '2E', 'FG', 'H3', 'IJ', 'KL', '4M', 'NO', 'P')\n\nFirst differing element 0:\n''\n'BC'\n\n- ('', '', '', '', '', '', '1A', '2E', '3I', '4M')\n+ ('BC', 'D', '2E', 'FG', 'H3', 'IJ', 'KL', '4M', 'NO', 'P')"
     },
     "test_ghostty_screen_resize_wide_prompt.GhosttyScreenResizeWidePromptTest.test_grow_shrink_grow_round_trip_preserves_short_content": {
       "status": "pass",
@@ -11024,13 +11019,13 @@
     },
     "test_iterm2_dcs_parser.ITerm2DCSParserTest.test_tmux_integration_hook_consumes_exit_record": {
       "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "signature": "7e6728d6dddf2122a32562e3ecfb2c48f923e8434978cb4137566aca6589b541",
+      "reason": "st has no embedded tmux control multiplexer"
     },
     "test_iterm2_dcs_parser.ITerm2DCSParserTest.test_tmux_hook_buffers_and_emits_complete_control_lines": {
       "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "signature": "7e6728d6dddf2122a32562e3ecfb2c48f923e8434978cb4137566aca6589b541",
+      "reason": "st has no embedded tmux control multiplexer"
     },
     "test_iterm2_dcs_parser.ITerm2DCSParserTest.test_tmux_dcs_wrapper_applies_the_inner_sgr": {
       "status": "pass",
@@ -11454,24 +11449,20 @@
       "reason": "b'\\n' != b''"
     },
     "test_iterm2_legacy_grid_tail_semantic_head.ITerm2LegacyGridTailSemanticHeadTest.test_height_growth_restores_newest_regular_history_line": {
-      "status": "failure",
-      "signature": "e9a1878517b12bcc926766b64063ae4e3f2d4a6db88bccef19fcd0e4dd8766e2",
-      "reason": "Lists differ: ['        ', '        '] != ['world   ', '        ']\n\nFirst differing element 0:\n'        '\n'world   '\n\n- ['        ', '        ']\n?   ^^^^^\n\n+ ['world   ', '        ']\n?   ^^^^^\n"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_legacy_grid_tail_semantic_head.ITerm2LegacyGridTailSemanticHeadTest.test_height_growth_restores_complete_wrapped_history_line": {
-      "status": "failure",
-      "signature": "2947f4d51b7e5bf1e21c0e7c3da265c3e1a049057ac6d3084cc17ca0e20914fa",
-      "reason": "Lists differ: ['        ', '        ', '        ', '        '] != ['abcdefgh', 'ijklmnop', 'qrst    ', '        ']\n\nFirst differing element 0:\n'        '\n'abcdefgh'\n\n- ['        ', '        ', '        ', '        ']\n+ ['abcdefgh', 'ijklmnop', 'qrst    ', '        ']"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_legacy_grid_tail_semantic_head.ITerm2LegacyGridTailSemanticHeadTest.test_height_growth_restores_empty_history_line": {
-      "status": "failure",
-      "signature": "d79780fb63bfeede3eb60cd6f1db84c90aa1f7e2b5529312d2aa8f47c930a38c",
-      "reason": "2 != 1"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_legacy_grid_tail_semantic_head.ITerm2LegacyGridTailSemanticHeadTest.test_height_growth_restores_history_larger_than_storage_block": {
-      "status": "failure",
-      "signature": "9df21ab784ae2071d4abb74e6e5bb67d1d0525d09593dc157881666b5d14207e",
-      "reason": "'' != '01234567890123456789012345678901234567890[858 chars]9xyz'\nDiff is 906 characters long. Set self.maxDiff to None to see it."
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_legacy_grid_tail_semantic_head.ITerm2LegacyGridTailSemanticHeadTest.test_height_growth_with_empty_history_adds_blank_rows": {
       "status": "pass",
@@ -11715,9 +11706,8 @@
       "reason": "st does not implement OSC 7/8 cwd/hyperlinks; st has no OSC 8 hyperlink or URI opening subsystem; st has no OSC 8 hyperlink storage; st has no shell semantic annotations / prompt metadata"
     },
     "test_iterm2_legacy_screen_annotation_restore.ITerm2LegacyScreenAnnotationRestoreTest.test_empty_history_line_restores_background_color": {
-      "status": "failure",
-      "signature": "9857fe0d923f0e3155387be32185a9c30302bd1d4ae6eeddee7bf6043afa5fdc",
-      "reason": "-2 != 5"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_legacy_screen_controls.ITerm2LegacyScreenControlsTest.test_upstream_inventory_has_20_distinct_executable_cases": {
       "status": "excluded",
@@ -11800,8 +11790,9 @@
       "reason": "st does not implement DECLRMM horizontal margins"
     },
     "test_iterm2_legacy_screen_controls.ITerm2LegacyScreenControlsTest.test_ed_directions_cursor_and_history_policy": {
-      "status": "pass",
-      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+      "status": "failure",
+      "signature": "563b7f7e9bd951b711fb654061e622ff4bd9ca8ade726806aac06886381f4ad2",
+      "reason": "3 != 0"
     },
     "test_iterm2_legacy_screen_controls.ITerm2LegacyScreenControlsTest.test_el_directions_and_clamped_cursor": {
       "status": "pass",
@@ -12175,34 +12166,28 @@
       "reason": "Lists differ: ['ABC', '   ', '   '] != ['ABC', 'DEF', 'G  ']\n\nFirst differing element 1:\n'   '\n'DEF'\n\n- ['ABC', '   ', '   ']\n?          ^^^    ^\n\n+ ['ABC', 'DEF', 'G  ']\n?          ^^^    ^\n"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_height_growth_pops_only_last_segment_of_long_history_line": {
-      "status": "failure",
-      "signature": "65b54a9e627c6ff19340e4945aa4037ce7a702d5e797d1380d5c144accab137b",
-      "reason": "Lists differ: ['    ', '    '] != ['IJ  ', '    ']\n\nFirst differing element 0:\n'    '\n'IJ  '\n\n- ['    ', '    ']\n?   ^^\n\n+ ['IJ  ', '    ']\n?   ^^\n"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_height_growth_pops_whole_short_history_line": {
-      "status": "failure",
-      "signature": "542becdb3b2d53bebd4261bb449e703e9149fe5e4b8c075b0c95d0ef823f4e2f",
-      "reason": "Lists differ: ['          ', '          '] != ['Hello     ', '          ']\n\nFirst differing element 0:\n'          '\n'Hello     '\n\n- ['          ', '          ']\n?   ^^^^^\n\n+ ['Hello     ', '          ']\n?   ^^^^^\n"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_height_growth_removes_two_newest_wrapped_segments": {
-      "status": "failure",
-      "signature": "b1c1542eebd35ea2d12945cce07536cbd158ccd906a6e027167edab850c721d3",
-      "reason": "Lists differ: ['   ', '   ', '   '] != ['GHI', 'J  ', '   ']\n\nFirst differing element 0:\n'   '\n'GHI'\n\n- ['   ', '   ', '   ']\n?   ^^^    ^\n\n+ ['GHI', 'J  ', '   ']\n?   ^^^    ^\n"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_height_growth_can_consume_all_wrapped_history_segments": {
-      "status": "failure",
-      "signature": "43f69b60b44b14f53199bf4c2d05ddceaa0e737b2a94ed4f7b55deeed9a519ad",
-      "reason": "Lists differ: ['   ', '   ', '   ', '   ', '   '] != ['ABC', 'DEF', 'GHI', 'J  ', '   ']\n\nFirst differing element 0:\n'   '\n'ABC'\n\n- ['   ', '   ', '   ', '   ', '   ']\n+ ['ABC', 'DEF', 'GHI', 'J  ', '   ']"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_height_growth_removes_only_newest_of_multiple_raw_lines": {
-      "status": "failure",
-      "signature": "3cf13757e9f80c874facf3c3a11aa617dd244a0d1a48f23eb56490fcfcf0bb53",
-      "reason": "Lists differ: ['          ', '          '] != ['SecondLine', '          ']\n\nFirst differing element 0:\n'          '\n'SecondLine'\n\n- ['          ', '          ']\n+ ['SecondLine', '          ']"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_consuming_only_raw_history_line_resets_history_state": {
-      "status": "failure",
-      "signature": "a01fc1268c2024723ed88f47734342cd9f81652c29533c8f483d334399257ecc",
-      "reason": "1 != 0"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_last_raw_line_length_tracks_the_newest_hard_line": {
       "status": "excluded",
@@ -12260,13 +12245,13 @@
       "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_nonempty_content_presence_toggles_through_public_erase": {
-      "status": "pass",
-      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+      "status": "failure",
+      "signature": "3551eddde4a7ac52267cb6344aca245dc4c5b1c82f0480dc2a28965ba9be3cb9",
+      "reason": "Tuples differ: ('hello',) != ()\n\nFirst tuple contains 1 additional elements.\nFirst extra element 0:\n'hello'\n\n- ('hello',)\n+ ()"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_two_sessions_mutate_their_screen_storage_independently": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_published_snapshot_is_independent_of_later_mutation": {
       "status": "pass",
@@ -12340,9 +12325,8 @@
       "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_history_entry_count_tracks_append_and_height_pop": {
-      "status": "failure",
-      "signature": "d79780fb63bfeede3eb60cd6f1db84c90aa1f7e2b5529312d2aa8f47c930a38c",
-      "reason": "2 != 1"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_mutation_invalidates_the_published_screen_snapshot": {
       "status": "pass",
@@ -12350,8 +12334,8 @@
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_cleared_last_line_accepts_a_shorter_replacement_without_stale_wrap": {
       "status": "failure",
-      "signature": "a01fc1268c2024723ed88f47734342cd9f81652c29533c8f483d334399257ecc",
-      "reason": "1 != 0"
+      "signature": "fe265ad86f4bdfd58630f5d77450751436345ad2f32afb5a59e476bea6e040bb",
+      "reason": "2 != 0"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_more_than_one_line_block_limit_rolls_into_public_history": {
       "status": "excluded",
@@ -12563,9 +12547,8 @@
       "reason": "b'abcdef\\n\\n' != b'abcdef'"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_mutating_both_branches_after_a_copy_keeps_them_independent": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_second_append_keeps_the_first_snapshot_and_the_complete_tail": {
       "status": "pass",
@@ -12576,39 +12559,32 @@
       "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_middle_branch_append_can_be_replayed_to_its_leaf_only": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_root_append_can_be_cascaded_through_two_descendants": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_nonappend_middle_change_requires_the_full_boundary_on_the_leaf": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_two_root_appends_can_cascade_or_arrive_as_one_leaf_delta": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_leaf_follows_its_middle_branch_when_root_and_middle_diverge": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_five_level_append_chain_preserves_every_ancestor_snapshot": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_diverged_middle_branch_cannot_pick_up_the_root_suffix": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_append_beyond_the_private_block_size_retains_the_whole_line": {
       "status": "pass",
@@ -12620,18 +12596,16 @@
       "reason": "st does not implement OSC 7/8 cwd/hyperlinks"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_replay_without_saved_identity_reconstructs_the_same_model": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_saved_primary_identity_wins_over_the_alternate_contents": {
       "status": "pass",
       "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_new_session_allocates_independent_screen_identity": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_block.ITerm2LineBlockTest.test_unmutated_snapshot_copy_preserves_model_identity": {
       "status": "pass",
@@ -12656,44 +12630,37 @@
       "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_buffer.ITerm2LineBufferTest.test_modify_second_replay_leaves_the_first_session_unchanged": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_buffer.ITerm2LineBufferTest.test_modify_first_replay_leaves_the_second_session_unchanged": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_buffer.ITerm2LineBufferTest.test_modify_both_replays_diverge_without_cross_session_aliasing": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_buffer.ITerm2LineBufferTest.test_copy_of_copy_replays_three_independently_diverging_states": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_buffer.ITerm2LineBufferTest.test_surviving_second_session_remains_writable_after_first_is_destroyed": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_buffer.ITerm2LineBufferTest.test_surviving_first_session_remains_writable_after_second_is_destroyed": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_buffer.ITerm2LineBufferTest.test_height_growth_pops_the_newest_history_row_without_mutating_snapshot": {
-      "status": "failure",
-      "signature": "c56cf3bcf7c45d40adaaa891b4008bcaf5a37dd92952d69e83bb6b7cf3db5217",
-      "reason": "Tuples differ: ('', '') != ('Goodbye cruel world', '')\n\nFirst differing element 0:\n''\n'Goodbye cruel world'\n\n- ('', '')\n+ ('Goodbye cruel world', '')"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_line_buffer.ITerm2LineBufferTest.test_bounded_truncate_changes_only_the_overflowing_session": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "failure",
+      "signature": "6608c610d88eaf41d3f3b5b1c543428b8d10f91a96f2c2efb289b20e16cb9eaf",
+      "reason": "4 != 2"
     },
     "test_iterm2_line_buffer.ITerm2LineBufferTest.test_partial_history_trim_keeps_cursor_on_the_surviving_wrapped_suffix": {
       "status": "excluded",
@@ -13348,9 +13315,8 @@
       "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_vt100_grid.ITerm2VT100GridTest.test_scrollback_roundtrip_preserves_cursor_column": {
-      "status": "failure",
-      "signature": "208b11c9f5cecc2c6ef2b40a7f503131366366a80216bded324b35d1d225f26f",
-      "reason": "0 != 2"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_vt100_grid.ITerm2VT100GridTest.test_blank_cursor_after_soft_eol_reflows_to_logical_line_end": {
       "status": "failure",
@@ -14037,24 +14003,20 @@
       "reason": "b'\\n' != b''"
     },
     "test_iterm2_vt100_grid.ITerm2VT100GridTest.test_height_growth_consumes_the_newest_regular_history_line": {
-      "status": "failure",
-      "signature": "e9a1878517b12bcc926766b64063ae4e3f2d4a6db88bccef19fcd0e4dd8766e2",
-      "reason": "Lists differ: ['        ', '        '] != ['world   ', '        ']\n\nFirst differing element 0:\n'        '\n'world   '\n\n- ['        ', '        ']\n?   ^^^^^\n\n+ ['world   ', '        ']\n?   ^^^^^\n"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_vt100_grid.ITerm2VT100GridTest.test_height_growth_consumes_a_complete_wrapped_history_line": {
-      "status": "failure",
-      "signature": "2947f4d51b7e5bf1e21c0e7c3da265c3e1a049057ac6d3084cc17ca0e20914fa",
-      "reason": "Lists differ: ['        ', '        ', '        ', '        '] != ['abcdefgh', 'ijklmnop', 'qrst    ', '        ']\n\nFirst differing element 0:\n'        '\n'abcdefgh'\n\n- ['        ', '        ', '        ', '        ']\n+ ['abcdefgh', 'ijklmnop', 'qrst    ', '        ']"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_vt100_grid.ITerm2VT100GridTest.test_height_growth_consumes_an_empty_newest_history_line": {
-      "status": "failure",
-      "signature": "d79780fb63bfeede3eb60cd6f1db84c90aa1f7e2b5529312d2aa8f47c930a38c",
-      "reason": "2 != 1"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_vt100_grid.ITerm2VT100GridTest.test_height_growth_consumes_a_history_line_larger_than_a_storage_block": {
-      "status": "failure",
-      "signature": "9df21ab784ae2071d4abb74e6e5bb67d1d0525d09593dc157881666b5d14207e",
-      "reason": "'' != '01234567890123456789012345678901234567890[858 chars]9xyz'\nDiff is 906 characters long. Set self.maxDiff to None to see it."
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_iterm2_vt100_grid.ITerm2VT100GridTest.test_height_growth_with_empty_history_only_adds_blank_rows": {
       "status": "pass",
@@ -17425,8 +17387,8 @@
     },
     "test_resize_cursor_autowrap.ResizeCursorAutowrapTest.test_grow_restores_rows_scrolled_only_for_cursor_visibility": {
       "status": "failure",
-      "signature": "257ee31331a882d96638e8737d57c6784acc283eda5a63529b0f64e7cce8c834",
-      "reason": "Lists differ: ['C    ', 'D    ', '     ', '     '] != ['A    ', 'B    ', 'C    ', 'D    ']\n\nFirst differing element 0:\n'C    '\n'A    '\n\n- ['C    ', 'D    ', '     ', '     ']\n+ ['A    ', 'B    ', 'C    ', 'D    ']"
+      "signature": "624c14b0da0422a6998d3f59a92c792c6cdeb5ef8f0367ecf249e41d94bf95f1",
+      "reason": "Lists differ: ['     ', 'A    ', 'B    ', 'C    '] != ['A    ', 'B    ', 'C    ', 'D    ']\n\nFirst differing element 0:\n'     '\n'A    '\n\n- ['     ', 'A    ', 'B    ', 'C    ']\n?   ^        ^        ^        ^\n\n+ ['A    ', 'B    ', 'C    ', 'D    ']\n?   ^        ^        ^        ^\n"
     },
     "test_resize_cursor_autowrap.ResizeCursorAutowrapTest.test_height_shrink_does_not_scroll_when_cursor_already_fits": {
       "status": "pass",
@@ -17449,8 +17411,8 @@
     },
     "test_resize_history_capacity.ResizeHistoryCapacityTest.test_capacity_keeps_only_newest_rows_after_resize_cycles": {
       "status": "failure",
-      "signature": "6608c610d88eaf41d3f3b5b1c543428b8d10f91a96f2c2efb289b20e16cb9eaf",
-      "reason": "4 != 2"
+      "signature": "a7cb788198fd295ab5c992aa1626cdfc3515c8dc0650cf6bc62bf728510127e0",
+      "reason": "6 != 2"
     },
     "test_resize_history_capacity.ResizeHistoryCapacityTest.test_active_alternate_resize_keeps_cursor_rows_without_history": {
       "status": "pass",
@@ -17581,14 +17543,12 @@
       "reason": "0 != 2"
     },
     "test_resize_viewport.ResizeViewportTest.test_height_shrink_keeps_scrolled_view_anchored": {
-      "status": "failure",
-      "signature": "56f8d2b1eb9a82fa27101b1d3ea49144457f79d6c57356998b7eeb5583e7947f",
-      "reason": "0 != 3"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_resize_viewport.ResizeViewportTest.test_height_grow_keeps_same_top_row_when_possible": {
-      "status": "failure",
-      "signature": "2c24f6c7c6ece00a97508340471868b5ac48dc6ee738beeed91f80f8173a54f5",
-      "reason": "0 != 1"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_resize_viewport.ResizeViewportTest.test_selection_tracks_same_history_text_through_resize": {
       "status": "failure",
@@ -17602,8 +17562,8 @@
     },
     "test_resize_viewport.ResizeViewportTest.test_a_scrolled_view_survives_growing_and_shrinking": {
       "status": "failure",
-      "signature": "6be885c86e47a71b2217983280c3349d8e0d627f84a296eccb10376e25491cb0",
-      "reason": "0 != 10"
+      "signature": "02dca7996511a26d0c351990d8b8e59dc46e208c9654d6939f12df21b1f60215",
+      "reason": "11 != 10"
     },
     "test_resize_wide_grapheme.ResizeWideGraphemeTest.test_shrink_never_leaves_wide_lead_without_continuation": {
       "status": "pass",
@@ -17615,8 +17575,8 @@
     },
     "test_resize_wide_grapheme.ResizeWideGraphemeTest.test_grapheme_payload_survives_width_and_height_resize": {
       "status": "failure",
-      "signature": "44715a55d88da5c24f6c6f891081c4ad1d861ca26d40dfb9bb29442887399ee3",
-      "reason": "b'ec' != b'\\xf0\\x9f\\x91\\xa9\\xe2\\x80\\x8d\\xf0\\x9f\\x92\\xbb'"
+      "signature": "9738b716c156c5194b1e40ad70371c4a792af7cf5726d6dfad7c19c6e25d14a8",
+      "reason": "b'\\n' != b'\\xf0\\x9f\\x91\\xa9\\xe2\\x80\\x8d\\xf0\\x9f\\x92\\xbb'"
     },
     "test_resize_wide_grapheme.ResizeWideGraphemeTest.test_reflow_preserves_wide_grapheme_hyperlink_and_selection": {
       "status": "excluded",
@@ -17771,14 +17731,12 @@
       "reason": "0 != 1"
     },
     "test_scrollback.ScrollbackTest.test_shrink_moves_clipped_top_rows_to_scrollback": {
-      "status": "failure",
-      "signature": "208b11c9f5cecc2c6ef2b40a7f503131366366a80216bded324b35d1d225f26f",
-      "reason": "0 != 2"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_scrollback.ScrollbackTest.test_grow_restores_newest_rows_from_scrollback": {
-      "status": "failure",
-      "signature": "f2f7264ae4988152941d47e8c5e6c69244d39d88ae23390155231dd6c4f1d035",
-      "reason": "Lists differ: ['C       ', 'D       ', '        ', '        '] != ['A       ', 'B       ', 'C       ', 'D       ']\n\nFirst differing element 0:\n'C       '\n'A       '\n\n- ['C       ', 'D       ', '        ', '        ']\n+ ['A       ', 'B       ', 'C       ', 'D       ']"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_scrollback.ScrollbackTest.test_codex_top_anchored_redraw_builds_real_history": {
       "status": "failure",
@@ -18410,134 +18368,113 @@
       "reason": "Shitty font shaping / software, Vulkan or Wayland/Cocoa renderer; st uses Xft/X11"
     },
     "test_tabs.TabTest.test_a_fresh_window_has_one_session_and_shows_it": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_opening_a_session_shows_it_and_keeps_the_first": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_closing_a_session_activates_a_neighbour": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_closing_back_to_one_leaves_a_session_showing": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_chords_cycle_sessions_with_wraparound": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_close_chord_closes_the_active_session": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_chords_do_not_leak_into_any_shell": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_clear_chord_reaches_only_the_active_shell": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_commands_follow_the_active_session": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_feeding_a_background_session_stays_off_the_shown_screen": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_typing_reaches_only_the_active_sessions_shell": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_background_responses_go_to_their_own_shell": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_bracketed_paste_is_per_session": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_mouse_reporting_stays_with_the_session_that_enabled_it": {
       "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "signature": "108c60e32346c8cde0a4e13c638b8cf7ab8794d0e518495c9a0af287c6f25599",
+      "reason": "platform mouse-selection gestures: use direct st selection cases"
     },
     "test_tabs.TabTest.test_kitty_keyboard_mode_is_per_session": {
       "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "signature": "a1086bfe92d62777bc420f048cb8b50a2d10357d79ab17c288ae0b105334c050",
+      "reason": "st does not implement Kitty keyboard negotiation"
     },
     "test_tabs.TabTest.test_alt_screen_survives_the_background": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_background_sessions_track_the_window_resize": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_selection_survives_the_background": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_scrollback_position_survives_the_background": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_focus_state_replays_into_the_activated_session": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_title_follows_the_active_session": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_osc52_from_the_background_sets_the_clipboard": {
       "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "signature": "df3deda3ffc7874367a104d3ebef7ce9e07737f08710d31780827cef1c2e74be",
+      "reason": "external clipboard ownership setup is platform-specific; st INCR/paste tests cover its X11 transport"
     },
     "test_tabs.TabTest.test_close_with_a_stalled_transaction_stays_coherent": {
       "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "signature": "f1f1d6f3722a527a91f07f23835af178860e1f834592abfd1e428cdc3656b27f",
+      "reason": "Shitty test-only PTY scheduling/fault-injection API; st byte-stream tests run through twrite/ttywrite"
     },
     "test_tabs.TabTest.test_closing_a_blinking_background_session_is_clean": {
       "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "signature": "646013ea5d5430193f96d579286570a1a5e044e9d620e98011c0525794b16ea5",
+      "reason": "Shitty renderer/layout lifecycle API; st uses X11/Xft"
     },
     "test_tabs.TabTest.test_a_closed_sessions_arena_is_reaped_and_reused": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tabs.TabTest.test_a_storm_of_sessions_stays_consistent": {
-      "status": "excluded",
-      "signature": "8b20ad542bff3e48470a58945b713644b6d29fa6c50954a9f31a4630f7ef8581",
-      "reason": "Shitty multiple sessions/tabs (absent in st)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_term_features.TermFeaturesTest.test_capabilities_query_reports_the_feature_string": {
       "status": "excluded",
@@ -18556,8 +18493,8 @@
     },
     "test_term_features.TermFeaturesTest.test_the_reply_goes_to_the_asking_session": {
       "status": "excluded",
-      "signature": "7e6767b8d5118f548e7805be7cc141ff434cc89c903ff810325edf7c31029bfd",
-      "reason": "st does not implement notification/shell/Kitty/iTerm extensions; st has no multiple sessions, tabs or embedded multiplexer"
+      "signature": "bbbb3ced5a61d2055f6bb469aa5be4589290ccabc7b55930183b27d405a7c275",
+      "reason": "st does not implement notification/shell/Kitty/iTerm extensions"
     },
     "test_term_features.TermFeaturesTest.test_children_get_term_features_in_the_environment": {
       "status": "excluded",
@@ -23335,104 +23272,85 @@
       "reason": "upstream inventory bookkeeping, not a terminal behavior test"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_fresh_session_count": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_fresh_session_active": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_first_new_session_count": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_first_new_session_active": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_second_new_session_count": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_second_new_session_active": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_replace_close_count": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_replace_close_active": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_replace_reopen_count": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_replace_reopen_active": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_kill_current_count": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_kill_current_activates_previous": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_close_all_others_leaves_one": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_select_next_first": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_select_next_second": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_select_next_wrap": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_select_previous_wrap": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_selection_keeps_count": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_selection_shows_session_content": {
       "status": "excluded",
-      "signature": "79c5b3456910ba856b9987f076a1f250524b74320df8280a365829221e7b7251",
-      "reason": "Shitty renderer/layout lifecycle API; st uses X11/Xft; st has no multiple sessions, tabs or embedded multiplexer"
+      "signature": "646013ea5d5430193f96d579286570a1a5e044e9d620e98011c0525794b16ea5",
+      "reason": "Shitty renderer/layout lifecycle API; st uses X11/Xft"
     },
     "test_tmux_regress_window_ops.TmuxRegressWindowOpsTest.test_selection_shows_session_title": {
-      "status": "excluded",
-      "signature": "6e3867405a3ec22558bf61a4f684db4e91d4757067a0d4eb20108bdae74aa5f5",
-      "reason": "st has no multiple sessions, tabs or embedded multiplexer"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_toml.TomlComplianceTest.test_valid_documents_match_their_reference_json": {
       "status": "excluded",
@@ -24931,9 +24849,8 @@
       "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_xtermjs_buffer.XtermJsBufferTest.test_height_reduction_exposes_backing_rows_above_the_cursor": {
-      "status": "failure",
-      "signature": "16bea8dded98244ed59b25f20530594b8aadb3fbce45c117e2bc78eb1c36aa7c",
-      "reason": "Tuples differ: (0, 14, 14, 0) != (5, 19, 14, 5)\n\nFirst differing element 0:\n0\n5\n\n- (0, 14, 14, 0)\n+ (5, 19, 14, 5)"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_xtermjs_buffer.XtermJsBufferTest.test_height_reduction_without_scrollback_trims_above_bottom_cursor": {
       "status": "pass",
@@ -24944,18 +24861,17 @@
       "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_xtermjs_buffer.XtermJsBufferTest.test_height_growth_reveals_more_backing_rows_above_the_viewport": {
-      "status": "failure",
-      "signature": "84ede0cb71155899a34abd7279118375afa21b3d9772eb0ee244dbb34410dbdf",
-      "reason": "Tuples differ: (10, 39, 29, 10) != (5, 34, 29, 5)\n\nFirst differing element 0:\n10\n5\n\n- (10, 39, 29, 10)\n+ (5, 34, 29, 5)"
-    },
-    "test_xtermjs_buffer.XtermJsBufferTest.test_height_growth_keeps_a_viewport_parked_at_the_top": {
-      "status": "failure",
-      "signature": "59fd946c9283ca786e277f97d47129fab7349b0f59647f2bd7b4eabfe1961185",
-      "reason": "Tuples differ: (10, 39, 29, 10) != (5, 34, 29, 0)\n\nFirst differing element 0:\n10\n5\n\n- (10, 39, 29, 10)\n?  ^^   ^      -\n\n+ (5, 34, 29, 0)\n?  ^   ^\n"
-    },
-    "test_xtermjs_buffer.XtermJsBufferTest.test_old_conpty_growth_preserves_the_base_and_appends_rows": {
       "status": "pass",
       "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+    },
+    "test_xtermjs_buffer.XtermJsBufferTest.test_height_growth_keeps_a_viewport_parked_at_the_top": {
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+    },
+    "test_xtermjs_buffer.XtermJsBufferTest.test_old_conpty_growth_preserves_the_base_and_appends_rows": {
+      "status": "failure",
+      "signature": "35a437ee2c9b4a456e3a5a922343a0e5ce29498ff5e10755dbaea55e897fc945",
+      "reason": "Tuples differ: (5, 34, 29, 5) != (10, 39, 29, 10)\n\nFirst differing element 0:\n5\n10\n\n- (5, 34, 29, 5)\n+ (10, 39, 29, 10)"
     },
     "test_xtermjs_buffer.XtermJsBufferTest.test_simultaneous_row_and_column_growth_resizes_every_row": {
       "status": "pass",
@@ -25399,7 +25315,7 @@
     },
     "test_xtermjs_buffer_line.XtermJsBufferLineTest.test_every_public_line_mutation_invalidates_extracted_text": {
       "status": "failure",
-      "signature": "b3041804270754e3005d7aae2df50296003e332c39a622a69513214316bf723c",
+      "signature": "fc3d31f0441a514cc9f0e59522e218f0cbf11cacc0a038a8fee66e81430b745b",
       "reason": "'abcf' != 'abcdef'\n- abcf\n+ abcdef\n?    ++\n"
     },
     "test_xtermjs_buffer_reflow.XtermJsBufferReflowTest.test_upstream_inventory_has_7_distinct_cases": {
@@ -26751,9 +26667,8 @@
       "reason": "True != False"
     },
     "test_xtermjs_input_handler_core.XtermJsInputHandlerCoreTest.test_ed2_can_push_the_visible_page_into_scrollback": {
-      "status": "failure",
-      "signature": "208b11c9f5cecc2c6ef2b40a7f503131366366a80216bded324b35d1d225f26f",
-      "reason": "0 != 2"
+      "status": "pass",
+      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "test_xtermjs_input_handler_core.XtermJsInputHandlerCoreTest.test_ed_zero_one_two_and_wrapped_lines_match_xtermjs": {
       "status": "pass",
@@ -29004,16 +28919,18 @@
     },
     "alacritty/main/alt_reset": {
       "status": "failure",
-      "signature": "5c77068ac6365109fef83f76227714c40b1857f4e545dfee5f09602b973648b1",
-      "reason": "foreground index 33,0: got '1'; expected '-2'"
+      "signature": "990cd0469a4f2a1444baba7d1ec3327824bf4c3bab9b1afdc5456b6e75a21840",
+      "reason": "history + screen row count: got '34'; expected '30'"
     },
     "alacritty/main/clear_underline": {
-      "status": "pass",
-      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+      "status": "failure",
+      "signature": "48e73b7ec490519104bae2c620c1e3ccaa9c3fd854067eb3279e95fd1c6c1179",
+      "reason": "history + screen row count: got '35'; expected '32'"
     },
     "alacritty/main/colored_reset": {
-      "status": "pass",
-      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+      "status": "failure",
+      "signature": "40d292884abb4c69c6ef764b6db12600bbeb91b7b3bdd85c02daf5e18a871c13",
+      "reason": "history + screen row count: got '65'; expected '63'"
     },
     "alacritty/main/colored_underline": {
       "status": "failure",
@@ -29090,12 +29007,14 @@
       "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
     },
     "alacritty/main/newline_with_cursor_beyond_scroll_region": {
-      "status": "pass",
-      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+      "status": "failure",
+      "signature": "7223303bc2c06bed5af2fabc3f05f4406b3ab697ffc16a2dc365a88434542aac",
+      "reason": "history + screen row count: got '30'; expected '29'"
     },
     "alacritty/main/origin_goto": {
-      "status": "pass",
-      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+      "status": "failure",
+      "signature": "5cfee9ece1b90c4e07b6db28614cc1fc5c9b94a4f7b13be6fed8082a06e44d90",
+      "reason": "history + screen row count: got '38'; expected '37'"
     },
     "alacritty/main/region_scroll_down": {
       "status": "failure",
@@ -29128,8 +29047,8 @@
     },
     "alacritty/main/selective_erasure": {
       "status": "failure",
-      "signature": "56dea3bf1d0cf7831472f2d0302a9d9de1119ca18e28f7d26a416fd60dff9993",
-      "reason": "char 0,0: got ' '; expected 'A'"
+      "signature": "1bba4d054abfbbddb5e19ae1d54800bb3a3ef5b2ded63ebd887657f92592b79d",
+      "reason": "history + screen row count: got '4'; expected '3'"
     },
     "alacritty/main/sgr": {
       "status": "failure",
@@ -29171,28 +29090,34 @@
       "reason": "foreground index 18,0: got '-1'; expected '-2'"
     },
     "alacritty/main/vttest_cursor_movement_1": {
-      "status": "pass",
-      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+      "status": "failure",
+      "signature": "a0a189da2da48d9f6d2d499948946bc087a532d91432f24158e7aa19a37528a5",
+      "reason": "history + screen row count: got '51'; expected '29'"
     },
     "alacritty/main/vttest_insert": {
-      "status": "pass",
-      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+      "status": "failure",
+      "signature": "a0a189da2da48d9f6d2d499948946bc087a532d91432f24158e7aa19a37528a5",
+      "reason": "history + screen row count: got '51'; expected '29'"
     },
     "alacritty/main/vttest_origin_mode_1": {
-      "status": "pass",
-      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+      "status": "failure",
+      "signature": "1df06674b81ce73812722a26c146b63ec3b0bd858d1e41ef9d0f3ee523ecd3ed",
+      "reason": "history + screen row count: got '292'; expected '29'"
     },
     "alacritty/main/vttest_origin_mode_2": {
-      "status": "pass",
-      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+      "status": "failure",
+      "signature": "102a165ccce5b8bbc511098fd8b41f8c16d3eb10584662fb765f47884a8b9178",
+      "reason": "history + screen row count: got '242'; expected '29'"
     },
     "alacritty/main/vttest_scroll": {
-      "status": "pass",
-      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+      "status": "failure",
+      "signature": "c1df3ca348b03f237c1adb135cb0b40e17c79d66f5492eabfa18dabf3cfd4911",
+      "reason": "history + screen row count: got '194'; expected '29'"
     },
     "alacritty/main/vttest_tab_clear_set": {
-      "status": "pass",
-      "signature": "21c3189704c1b21479c7b3e046c535fa7276fe781efa3c0c0c20fbc0a5cc387e"
+      "status": "failure",
+      "signature": "e4d00712847d49a8ec4d41725c5fbd603b3ffdb66d64d5c2c169cb67ebe7d0ae",
+      "reason": "history + screen row count: got '61'; expected '31'"
     },
     "alacritty/main/wrapline_alt_toggle": {
       "status": "failure",

@@ -24,6 +24,33 @@ for `test-sanitize`. No graphical session or network access is required.
   failures and returns nonzero if any case fails. Sanitized runs enable
   AddressSanitizer, UndefinedBehaviorSanitizer and leak detection. Test
   binaries are isolated from production objects and are not installed.
+- `test_sessions.c` checks the real session manager: incremental parser and
+  reply isolation, copy/history ownership, resize, stable IDs, queued writes,
+  focus routing, actual child exit and refused PTY creation. `run_sessions.py`
+  runs its seven cases with deadlines, also under all three sanitizers.
+- `make test-x11` runs `test_tabs_x11.py` against the production binary in its
+  own Xvfb server, with three real PTYs. It checks keyboard/copy-mode/keyboard-lock
+  routing, background replies and titles, dynamic Xft palette isolation, resize
+  of all children, tab clicks, shell exits and hiding the bar. Screenshots are
+  saved to `tests/bin/tabs-{three,one}.png`. It requires Xvfb, libXtst and Pillow;
+  `ST_XVFB` may point to a non-system Xvfb binary. This test never uses the user's
+  display. Headless INCR tests separately cover paste destination across a
+  switch and draining a transfer after its recipient closes.
+  Pixel comparisons also verify that old greeting/output rows survive closing
+  the first tab and hiding the bar, and a shrinking pixel resize that keeps the
+  same cell grid. That last case does not necessarily emit Expose; replacing the
+  backing pixmap must explicitly redraw every row.
+  It also fills the viewport, grows its height and compares the bottom row at
+  its new pixel position, then checks that shrinking restores the entire image.
+- Seven native vertical-resize cases cover history restoration, insufficient
+  history, short output, repeated shrink/grow, alternate screen, saved cursors
+  and a parked scrollback view. Synthetic top padding is discarded on shrink;
+  explicit writes into it turn it into real content that must be retained.
+- Five native clear-screen cases cover preservation of populated rows and blank
+  lines between them, repeated empty clears, cursor/margins, partial/alternate
+  erases, resize padding, and wide/color cells through history-ring wraparound.
+  The session test clears a background tab and checks ownership. X11 compares
+  old output pixels with scrollback after a full erase and Shift+PageUp.
 
 ## Full Shitty reference suite
 

@@ -1,6 +1,7 @@
 /* See LICENSE for license details. */
 #include <errno.h>
 #include <math.h>
+#include <poll.h>
 #include <limits.h>
 #include <locale.h>
 #include <signal.h>
@@ -60,6 +61,15 @@ static void zoom(const Arg *);
 static void zoomabs(const Arg *);
 static void zoomreset(const Arg *);
 static void ttysend(const Arg *);
+static void tabnew(const Arg *);
+static void tabclose(const Arg *);
+static void tabnext(const Arg *);
+static void tabselect(const Arg *);
+static void tabactivate(Session *);
+static void tabschanged(void);
+static void drawtabs(void);
+static int tabheight(void);
+enum { TabBar, TabInactive, TabBorder, TabActive, TabText, TabActiveText, TabAccent, TabActivity };
 
 /* config.h for applying patches and the configuration. */
 #include "config.h"
@@ -69,7 +79,7 @@ static void ttysend(const Arg *);
 #define XEMBED_FOCUS_OUT 5
 
 /* macros */
-#define IS_SET(flag)		((win.mode & (flag)) != 0)
+#define IS_SET(flag)		(((win.mode | session_view(session_current())->mode) & (flag)) != 0)
 #define TRUERED(x)		(((x) & 0xff0000) >> 8)
 #define TRUEGREEN(x)		(((x) & 0xff00))
 #define TRUEBLUE(x)		(((x) & 0xff) << 8)
@@ -249,13 +259,20 @@ static char *opt_name  = NULL;
 static char *opt_title = NULL;
 
 static uint buttons; /* bit field of pressed buttons */
-static struct { int active, incr, bracketed, discard; } paste;
+static Color tabcolors[LEN(tabcolorname)];
+static int tabcolorsready;
+static struct { int active, incr, bracketed, discard; uint64_t target; } paste;
+#define SCOL ((Color *)session_view(session_current())->palette)
+#define SCOLLEN (session_view(session_current())->palette_len)
+#define TEXTTOP (borderpx + tabheight())
 
 /* Cancel child delivery, but keep draining/acknowledging an INCR owner. */
 void
 xpastecancel(void)
 {
-	if (paste.bracketed) ttywrite("\033[201~", 6, 0);
+    if (paste.target && session_find(paste.target) != session_current()) return;
+	if (paste.bracketed && session_find(paste.target))
+        session_write(session_find(paste.target), "\033[201~", 6, 0);
 	paste.bracketed = 0;
 	if (paste.active) paste.discard = 1;
 }
@@ -282,6 +299,7 @@ clippaste(const Arg *dummy)
 
 	if (browseactive() || paste.active) return;
 	paste.active = 1;
+    paste.target = session_view(session_active())->id;
 	clipboard = XInternAtom(xw.dpy, "CLIPBOARD", 0);
 	XConvertSelection(xw.dpy, clipboard, xsel.xtarget, clipboard,
 			xw.win, CurrentTime);
@@ -292,6 +310,7 @@ selpaste(const Arg *dummy)
 {
 	if (browseactive() || paste.active) return;
 	paste.active = 1;
+    paste.target = session_view(session_active())->id;
 	XConvertSelection(xw.dpy, XA_PRIMARY, xsel.xtarget, XA_PRIMARY,
 			xw.win, CurrentTime);
 }
@@ -349,7 +368,7 @@ evcol(XEvent *e)
 int
 evrow(XEvent *e)
 {
-	int y = e->xbutton.y - borderpx;
+	int y = e->xbutton.y - TEXTTOP;
 	LIMIT(y, 0, win.th - 1);
 	return y / win.ch;
 }
@@ -482,6 +501,14 @@ bpress(XEvent *e)
 	int btn = e->xbutton.button;
 	struct timespec now;
 	int snap;
+    if (e->xbutton.y < tabheight()) {
+        size_t n = session_count(), visible = MAX(1, win.w / MAX(1, 12 * win.cw));
+        size_t at = session_index(session_active()), first = at >= visible ? at - visible + 1 : 0;
+        visible = MIN(n, visible);
+        if (btn == Button1) tabselect(&(Arg){.i = first + MIN(visible - 1, (size_t)MAX(0, e->xbutton.x) / MAX(1, win.w / visible))});
+        else if (btn == Button4 || btn == Button5) tabnext(&(Arg){.i = btn == Button4 ? -1 : 1});
+        return;
+    }
 
 	if (browseactive()) {
 		if (btn == Button4 || btn == Button5) {
@@ -545,10 +572,14 @@ selnotify(XEvent *e)
 	uchar *data, *last, *repl;
 	Atom type, incratom, property = None;
 
-	if (browseactive()) {
-		xpastecancel();
-		paste.discard = 1;
-	}
+	if (!paste.target && !paste.active) paste.target = session_view(session_active())->id;
+    Session *target = session_find(paste.target);
+    if (!target) paste.discard = 1;
+    if (target) {
+        Session *old = session_bind(target);
+        if (browseactive()) { xpastecancel(); paste.discard = 1; }
+        session_bind(old);
+    }
 
 	incratom = XInternAtom(xw.dpy, "INCR", 0);
 
@@ -619,11 +650,11 @@ selnotify(XEvent *e)
 		}
 
 		if (!paste.discard && nitems > 0) {
-			if (IS_SET(MODE_BRCKTPASTE) && !paste.bracketed) {
-				ttywrite("\033[200~", 6, 0);
+			if (((session_view(target)->mode | win.mode) & MODE_BRCKTPASTE) && !paste.bracketed) {
+				session_write(target, "\033[200~", 6, 0);
 				paste.bracketed = 1;
 			}
-			ttywrite((char *)data, nitems * format / 8, 1);
+			session_write(target, (char *)data, nitems * format / 8, 1);
 		}
 		XFree(data);
 		/* number of 32-bit chunks returned */
@@ -631,7 +662,8 @@ selnotify(XEvent *e)
 	} while (rem > 0);
 
 	if (!paste.incr || nitems == 0) {
-		if (paste.bracketed) ttywrite("\033[201~", 6, 0);
+		if (paste.bracketed && session_find(paste.target))
+        session_write(session_find(paste.target), "\033[201~", 6, 0);
 		memset(&paste, 0, sizeof(paste));
 	}
 
@@ -729,6 +761,10 @@ xsetsel(char *str)
 void
 brelease(XEvent *e)
 {
+    if (e->xbutton.y < tabheight()) {
+        if (e->xbutton.button >= 1 && e->xbutton.button <= 11) buttons &= ~(1u << (e->xbutton.button - 1));
+        return;
+    }
 	int btn = e->xbutton.button;
 
 	if (1 <= btn && btn <= 11)
@@ -751,6 +787,7 @@ brelease(XEvent *e)
 void
 bmotion(XEvent *e)
 {
+    if (e->xmotion.y < tabheight()) return;
 	if (browseactive())
 		return;
 
@@ -773,13 +810,12 @@ cresize(int width, int height)
 		win.h = height;
 
 	col = (win.w - 2 * borderpx) / win.cw;
-	row = (win.h - 2 * borderpx) / win.ch;
+	row = (win.h - 2 * borderpx - tabheight()) / win.ch;
 	col = MAX(1, col);
 	row = MAX(1, row);
 
-	tresize(col, row);
+	sessions_resize(col, row, col * win.cw, row * win.ch);
 	xresize(col, row);
-	ttyresize(win.tw, win.th);
 }
 
 void
@@ -796,6 +832,9 @@ xresize(int col, int row)
 
 	/* resize to new width */
 	xw.specbuf = xrealloc(xw.specbuf, col * sizeof(GlyphFontSpec));
+	/* The backing pixmap is new even when the cell grid did not change.
+	 * A shrinking window need not generate Expose to repaint old rows. */
+	redraw();
 }
 
 ushort
@@ -859,39 +898,28 @@ parsealpha(const char *s)
 void
 xloadcols(void)
 {
-	int i;
-	static int loaded;
-	Color *cp;
-
-	if (loaded) {
-		for (cp = dc.col; cp < &dc.col[dc.collen]; ++cp)
-			XftColorFree(xw.dpy, xw.vis, xw.cmap, cp);
-	} else {
-		dc.collen = MAX(LEN(colorname), 256);
-		dc.col = xmalloc(dc.collen * sizeof(Color));
-	}
-
-	for (i = 0; i < dc.collen; i++)
-		if (!xloadcolor(i, NULL, &dc.col[i])) {
-			if (colorname[i])
-				die("could not allocate color '%s'\n", colorname[i]);
-			else
-				die("could not allocate color %d\n", i);
-		}
-
-	xapplyalpha(&dc.col[defaultbg]);
-	loaded = 1;
+    SessionView *v = session_view(session_current());
+    if (v->palette) {
+        for (size_t i = 0; i < v->palette_len; i++)
+            XftColorFree(xw.dpy, xw.vis, xw.cmap, &SCOL[i]);
+    } else {
+        v->palette_len = MAX(LEN(colorname), 256);
+        v->palette = xmalloc(v->palette_len * sizeof(Color));
+    }
+    for (size_t i = 0; i < v->palette_len; i++)
+        if (!xloadcolor(i, NULL, &SCOL[i])) die("could not allocate color %zu\n", i);
+    xapplyalpha(&SCOL[defaultbg]);
 }
 
 int
 xgetcolor(int x, unsigned char *r, unsigned char *g, unsigned char *b)
 {
-	if (!BETWEEN(x, 0, dc.collen - 1))
+	if (!BETWEEN(x, 0, SCOLLEN - 1))
 		return 1;
 
-	*r = dc.col[x].color.red >> 8;
-	*g = dc.col[x].color.green >> 8;
-	*b = dc.col[x].color.blue >> 8;
+	*r = SCOL[x].color.red >> 8;
+	*g = SCOL[x].color.green >> 8;
+	*b = SCOL[x].color.blue >> 8;
 
 	return 0;
 }
@@ -901,17 +929,17 @@ xsetcolorname(int x, const char *name)
 {
 	Color ncolor;
 
-	if (!BETWEEN(x, 0, dc.collen - 1))
+	if (!BETWEEN(x, 0, SCOLLEN - 1))
 		return 1;
 
 	if (!xloadcolor(x, name, &ncolor))
 		return 1;
 
-	XftColorFree(xw.dpy, xw.vis, xw.cmap, &dc.col[x]);
-	dc.col[x] = ncolor;
+	XftColorFree(xw.dpy, xw.vis, xw.cmap, &SCOL[x]);
+	SCOL[x] = ncolor;
 
 	if (x == defaultbg)
-		xapplyalpha(&dc.col[defaultbg]);
+		xapplyalpha(&SCOL[defaultbg]);
 
 	return 0;
 }
@@ -923,7 +951,7 @@ void
 xclear(int x1, int y1, int x2, int y2)
 {
 	XftDrawRect(xw.draw,
-			&dc.col[IS_SET(MODE_REVERSE)? defaultfg : defaultbg],
+			&SCOL[IS_SET(MODE_REVERSE)? defaultfg : defaultbg],
 			x1, y1, x2-x1, y2-y1);
 }
 
@@ -942,9 +970,9 @@ xhints(void)
 	sizeh->width = win.w;
 	sizeh->height_inc = win.ch;
 	sizeh->width_inc = win.cw;
-	sizeh->base_height = 2 * borderpx;
+	sizeh->base_height = 2 * borderpx + tabheight();
 	sizeh->base_width = 2 * borderpx;
-	sizeh->min_height = win.ch + 2 * borderpx;
+	sizeh->min_height = win.ch + 2 * borderpx + tabheight();
 	sizeh->min_width = win.cw + 2 * borderpx;
 	if (xw.isfixed) {
 		sizeh->flags |= PMaxSize;
@@ -1235,6 +1263,10 @@ xinit(int cols, int rows)
 	/* colors */
 	xw.cmap = XCreateColormap(xw.dpy, parent, xw.vis, None);
 	xloadcols();
+    for (size_t i = 0; i < LEN(tabcolors); i++)
+        if (!XftColorAllocName(xw.dpy, xw.vis, xw.cmap, tabcolorname[i], &tabcolors[i]))
+            die("cannot allocate tab color %s\n", tabcolorname[i]);
+    tabcolorsready = 1;
 
 	/* adjust fixed window geometry */
 	win.w = 2 * borderpx + cols * win.cw;
@@ -1245,8 +1277,8 @@ xinit(int cols, int rows)
 		xw.t += DisplayHeight(xw.dpy, xw.scr) - win.h - 2;
 
 	/* Events */
-	xw.attrs.background_pixel = dc.col[defaultbg].pixel;
-	xw.attrs.border_pixel = dc.col[defaultbg].pixel;
+	xw.attrs.background_pixel = SCOL[defaultbg].pixel;
+	xw.attrs.border_pixel = SCOL[defaultbg].pixel;
 	xw.attrs.bit_gravity = NorthWestGravity;
 	xw.attrs.event_mask = FocusChangeMask | KeyPressMask | KeyReleaseMask
 		| ExposureMask | VisibilityChangeMask | StructureNotifyMask
@@ -1266,7 +1298,7 @@ xinit(int cols, int rows)
 			&gcvalues);
 	xw.buf = XCreatePixmap(xw.dpy, xw.win, win.w, win.h,
 			xw.depth);
-	XSetForeground(xw.dpy, dc.gc, dc.col[defaultbg].pixel);
+	XSetForeground(xw.dpy, dc.gc, SCOL[defaultbg].pixel);
 	XFillRectangle(xw.dpy, xw.buf, dc.gc, 0, 0, win.w, win.h);
 
 	/* font spec buffer */
@@ -1327,7 +1359,7 @@ xinit(int cols, int rows)
 int
 xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x, int y)
 {
-	float winx = borderpx + x * win.cw, winy = borderpx + y * win.ch, xp, yp;
+	float winx = borderpx + x * win.cw, winy = TEXTTOP + y * win.ch, xp, yp;
 	ushort mode, prevmode = USHRT_MAX;
 	Font *font = &dc.font;
 	int frcflags = FRC_NORMAL;
@@ -1460,7 +1492,7 @@ void
 xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, int y)
 {
 	int charlen = len * ((base.mode & ATTR_WIDE) ? 2 : 1);
-	int winx = borderpx + x * win.cw, winy = borderpx + y * win.ch,
+	int winx = borderpx + x * win.cw, winy = TEXTTOP + y * win.ch,
 	    width = charlen * win.cw;
 	Color *fg, *bg, *temp, revfg, revbg, truefg, truebg;
 	XRenderColor colfg, colbg;
@@ -1483,7 +1515,7 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 		XftColorAllocValue(xw.dpy, xw.vis, xw.cmap, &colfg, &truefg);
 		fg = &truefg;
 	} else {
-		fg = &dc.col[base.fg];
+		fg = &SCOL[base.fg];
 	}
 
 	if (IS_TRUECOL(base.bg)) {
@@ -1494,16 +1526,16 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 		XftColorAllocValue(xw.dpy, xw.vis, xw.cmap, &colbg, &truebg);
 		bg = &truebg;
 	} else {
-		bg = &dc.col[base.bg];
+		bg = &SCOL[base.bg];
 	}
 
 	/* Change basic system colors [0-7] to bright system colors [8-15] */
 	if ((base.mode & ATTR_BOLD_FAINT) == ATTR_BOLD && BETWEEN(base.fg, 0, 7))
-		fg = &dc.col[base.fg + 8];
+		fg = &SCOL[base.fg + 8];
 
 	if (IS_SET(MODE_REVERSE)) {
-		if (fg == &dc.col[defaultfg]) {
-			fg = &dc.col[defaultbg];
+		if (fg == &SCOL[defaultfg]) {
+			fg = &SCOL[defaultbg];
 		} else {
 			colfg.red = ~fg->color.red;
 			colfg.green = ~fg->color.green;
@@ -1514,8 +1546,8 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 			fg = &revfg;
 		}
 
-		if (bg == &dc.col[defaultbg]) {
-			bg = &dc.col[defaultfg];
+		if (bg == &SCOL[defaultbg]) {
+			bg = &SCOL[defaultfg];
 		} else {
 			colbg.red = ~bg->color.red;
 			colbg.green = ~bg->color.green;
@@ -1550,17 +1582,17 @@ xdrawglyphfontspecs(const XftGlyphFontSpec *specs, Glyph base, int len, int x, i
 
 	/* Intelligent cleaning up of the borders. */
 	if (x == 0) {
-		xclear(0, (y == 0)? 0 : winy, borderpx,
+		xclear(0, (y == 0)? tabheight() : winy, borderpx,
 			winy + win.ch +
-			((winy + win.ch >= borderpx + win.th)? win.h : 0));
+			((winy + win.ch >= TEXTTOP + win.th)? win.h : 0));
 	}
 	if (winx + width >= borderpx + win.tw) {
-		xclear(winx + width, (y == 0)? 0 : winy, win.w,
-			((winy + win.ch >= borderpx + win.th)? win.h : (winy + win.ch)));
+		xclear(winx + width, (y == 0)? tabheight() : winy, win.w,
+			((winy + win.ch >= TEXTTOP + win.th)? win.h : (winy + win.ch)));
 	}
 	if (y == 0)
-		xclear(winx, 0, winx + width, borderpx);
-	if (winy + win.ch >= borderpx + win.th)
+		xclear(winx, tabheight(), winx + width, TEXTTOP);
+	if (winy + win.ch >= TEXTTOP + win.th)
 		xclear(winx, winy + win.ch, winx + width, win.h);
 
 	/* Clean up the region we want to draw to. */
@@ -1623,10 +1655,10 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 		g.mode |= ATTR_REVERSE;
 		g.bg = defaultfg;
 		if (selected(cx, cy)) {
-			drawcol = dc.col[defaultcs];
+			drawcol = SCOL[defaultcs];
 			g.fg = defaultrcs;
 		} else {
-			drawcol = dc.col[defaultrcs];
+			drawcol = SCOL[defaultrcs];
 			g.fg = defaultcs;
 		}
 	} else {
@@ -1637,12 +1669,12 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 			g.fg = defaultbg;
 			g.bg = defaultcs;
 		}
-		drawcol = dc.col[g.bg];
+		drawcol = SCOL[g.bg];
 	}
 
 	/* draw the new one */
 	if (IS_SET(MODE_FOCUSED)) {
-		switch (win.cursor) {
+		switch (session_view(session_current())->cursor) {
 		case 7: /* st extension */
 			g.u = 0x2603; /* snowman (U+2603) */
 			/* FALLTHROUGH */
@@ -1655,7 +1687,7 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 		case 4: /* Steady Underline */
 			XftDrawRect(xw.draw, &drawcol,
 					borderpx + cx * win.cw,
-					borderpx + (cy + 1) * win.ch - \
+					TEXTTOP + (cy + 1) * win.ch - \
 						cursorthickness,
 					win.cw, cursorthickness);
 			break;
@@ -1663,26 +1695,26 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 		case 6: /* Steady bar */
 			XftDrawRect(xw.draw, &drawcol,
 					borderpx + cx * win.cw,
-					borderpx + cy * win.ch,
+					TEXTTOP + cy * win.ch,
 					cursorthickness, win.ch);
 			break;
 		}
 	} else {
 		XftDrawRect(xw.draw, &drawcol,
 				borderpx + cx * win.cw,
-				borderpx + cy * win.ch,
+				TEXTTOP + cy * win.ch,
 				win.cw - 1, 1);
 		XftDrawRect(xw.draw, &drawcol,
 				borderpx + cx * win.cw,
-				borderpx + cy * win.ch,
+				TEXTTOP + cy * win.ch,
 				1, win.ch - 1);
 		XftDrawRect(xw.draw, &drawcol,
 				borderpx + (cx + 1) * win.cw - 1,
-				borderpx + cy * win.ch,
+				TEXTTOP + cy * win.ch,
 				1, win.ch - 1);
 		XftDrawRect(xw.draw, &drawcol,
 				borderpx + cx * win.cw,
-				borderpx + (cy + 1) * win.ch - 1,
+				TEXTTOP + (cy + 1) * win.ch - 1,
 				win.cw, 1);
 	}
 }
@@ -1700,6 +1732,10 @@ void
 xseticontitle(char *p)
 {
 	XTextProperty prop;
+    SessionView *v = session_view(session_current());
+    char *copy = xstrdup(p && *p ? p : (opt_title ? opt_title : "st"));
+    free(v->icon); v->icon = copy; p = copy;
+    if (session_current() != session_active() || !xw.dpy) return;
 	DEFAULT(p, opt_title);
 
 	if (p[0] == '\0')
@@ -1717,23 +1753,33 @@ void
 xsettitle(char *p)
 {
 	XTextProperty prop;
+    SessionView *v = session_view(session_current());
+    char *copy = xstrdup(p && *p ? p : (opt_title ? opt_title : "st"));
+    free(v->title); v->title = copy; p = copy;
+    if (session_current() != session_active() || !xw.dpy) return;
+    char *caption = NULL;
+    if (session_count() > 1) {
+        caption = xmalloc(strlen(p) + 80);
+        snprintf(caption, strlen(p) + 80, "[%zu/%zu] %s", session_index(session_active()) + 1, session_count(), p);
+        p = caption;
+    }
 	DEFAULT(p, opt_title);
 
 	if (p[0] == '\0')
 		p = opt_title;
 
 	if (Xutf8TextListToTextProperty(xw.dpy, &p, 1, XUTF8StringStyle,
-	                                &prop) != Success)
-		return;
+	                                &prop) != Success) { free(caption); return; }
 	XSetWMName(xw.dpy, xw.win, &prop);
 	XSetTextProperty(xw.dpy, xw.win, &prop, xw.netwmname);
 	XFree(prop.value);
+    free(caption);
 }
 
 int
 xstartdraw(void)
 {
-	return IS_SET(MODE_VISIBLE);
+	return session_current() == session_active() && IS_SET(MODE_VISIBLE);
 }
 
 void
@@ -1770,10 +1816,11 @@ xdrawline(Line line, int x1, int y1, int x2)
 void
 xfinishdraw(void)
 {
+    drawtabs();
 	XCopyArea(xw.dpy, xw.buf, xw.win, dc.gc, 0, 0, win.w,
 			win.h, 0, 0);
 	XSetForeground(xw.dpy, dc.gc,
-			dc.col[IS_SET(MODE_REVERSE)?
+			SCOL[IS_SET(MODE_REVERSE)?
 				defaultfg : defaultbg].pixel);
 }
 
@@ -1784,7 +1831,7 @@ xximspot(int x, int y)
 		return;
 
 	xw.ime.spot.x = borderpx + x * win.cw;
-	xw.ime.spot.y = borderpx + (y + 1) * win.ch;
+	xw.ime.spot.y = TEXTTOP + (y + 1) * win.ch;
 
 	XSetICValues(xw.ime.xic, XNPreeditAttributes, xw.ime.spotlist, NULL);
 }
@@ -1812,6 +1859,7 @@ unmap(XEvent *ev)
 void
 xsetpointermotion(int set)
 {
+    if (session_current() != session_active() || !xw.dpy) return;
 	MODBIT(xw.attrs.event_mask, set, PointerMotionMask);
 	XChangeWindowAttributes(xw.dpy, xw.win, CWEventMask, &xw.attrs);
 }
@@ -1819,9 +1867,10 @@ xsetpointermotion(int set)
 void
 xsetmode(int set, unsigned int flags)
 {
-	int mode = win.mode;
-	MODBIT(win.mode, set, flags);
-	if ((win.mode & MODE_REVERSE) != (mode & MODE_REVERSE))
+	SessionView *v = session_view(session_current());
+    unsigned int mode = v->mode;
+    MODBIT(v->mode, set, flags);
+	if (xw.dpy && (v->mode & MODE_REVERSE) != (mode & MODE_REVERSE))
 		redraw();
 }
 
@@ -1830,7 +1879,7 @@ xsetcursor(int cursor)
 {
 	if (!BETWEEN(cursor, 0, 7)) /* 7: st extension */
 		return 1;
-	win.cursor = cursor;
+	session_view(session_current())->cursor = cursor;
 	return 0;
 }
 
@@ -1850,6 +1899,7 @@ xseturgency(int add)
 void
 xbell(void)
 {
+    if (session_current() != session_active()) session_view(session_current())->activity = 1;
 	if (!(IS_SET(MODE_FOCUSED)))
 		xseturgency(1);
 	if (bellvolume)
@@ -1947,6 +1997,15 @@ browsekeysym(KeySym key, uint state)
 	return key;
 }
 
+static int
+shortcut_enabled(const Shortcut *binding)
+{
+    /* Keep Readline/terminal Meta+digits when no target tab exists. */
+    if (binding->func == tabnext) return session_count() > 1;
+    return binding->func != tabselect ||
+           (session_count() > 1 && session_at(binding->arg.i) != NULL);
+}
+
 void
 kpress(XEvent *ev)
 {
@@ -1958,8 +2017,6 @@ kpress(XEvent *ev)
 	Status status;
 	Shortcut *bp;
 
-	if (IS_SET(MODE_KBDLOCK))
-		return;
 
 	if (xw.ime.xic) {
 		len = XmbLookupString(xw.ime.xic, e, buf, sizeof buf, &ksym, &status);
@@ -1968,7 +2025,15 @@ kpress(XEvent *ev)
 	} else {
 		len = XLookupString(e, buf, sizeof buf, &ksym, NULL);
 	}
-	if (browseactive()) {
+	for (bp = shortcuts; bp < shortcuts + LEN(shortcuts); bp++) {
+        if (!shortcut_enabled(bp)) continue;
+        if ((bp->func == tabnew || bp->func == tabclose || bp->func == tabnext || bp->func == tabselect)
+            && browsekeysym(ksym, e->state) == bp->keysym && match(bp->mod, e->state)) {
+            bp->func(&bp->arg); return;
+        }
+    }
+    if (IS_SET(MODE_KBDLOCK)) return;
+    if (browseactive()) {
 		/* Use physical QWERTY keys, so commands also work in Russian. */
 		browseinput(browsekeysym(XLookupKeysym(e, (e->state & ShiftMask) ? 1 : 0), e->state),
 		            e->state, buf, len);
@@ -1977,6 +2042,7 @@ kpress(XEvent *ev)
 
 	/* 1. shortcuts */
 	for (bp = shortcuts; bp < shortcuts + LEN(shortcuts); bp++) {
+        if (!shortcut_enabled(bp)) continue;
 		if (ksym == bp->keysym && match(bp->mod, e->state)) {
 			bp->func(&(bp->arg));
 			return;
@@ -2022,7 +2088,7 @@ cmessage(XEvent *e)
 			win.mode &= ~MODE_FOCUSED;
 		}
 	} else if (e->xclient.data.l[0] == xw.wmdeletewin) {
-		ttyhangup();
+		sessions_free();
 		exit(0);
 	}
 }
@@ -2039,108 +2105,71 @@ resize(XEvent *e)
 void
 run(void)
 {
-	XEvent ev;
-	int w = win.w, h = win.h;
-	fd_set rfd;
-	int xfd = XConnectionNumber(xw.dpy), ttyfd, xev, drawing;
-	struct timespec seltv, *tv, now, lastblink, trigger = {0};
-	double timeout, copytimeout;
-
-	/* Waiting for window mapping */
-	do {
-		XNextEvent(xw.dpy, &ev);
-		/*
-		 * This XFilterEvent call is required because of XOpenIM. It
-		 * does filter out the key event and some client message for
-		 * the input method too.
-		 */
-		if (XFilterEvent(&ev, None))
-			continue;
-		if (ev.type == ConfigureNotify) {
-			w = ev.xconfigure.width;
-			h = ev.xconfigure.height;
-		}
-	} while (ev.type != MapNotify);
-
-	ttyfd = ttynew(opt_line, shell, opt_io, opt_cmd);
-	cresize(w, h);
-
-	for (timeout = -1, drawing = 0, lastblink = (struct timespec){0};;) {
-		FD_ZERO(&rfd);
-		FD_SET(ttyfd, &rfd);
-		FD_SET(xfd, &rfd);
-
-		if (XPending(xw.dpy))
-			timeout = 0;  /* existing events might not set xfd */
-
-		seltv.tv_sec = timeout / 1E3;
-		seltv.tv_nsec = 1E6 * (timeout - 1E3 * seltv.tv_sec);
-		tv = timeout >= 0 ? &seltv : NULL;
-
-		if (pselect(MAX(xfd, ttyfd)+1, &rfd, NULL, NULL, tv, NULL) < 0) {
-			if (errno == EINTR)
-				continue;
-			die("select failed: %s\n", strerror(errno));
-		}
-		clock_gettime(CLOCK_MONOTONIC, &now);
-
-		if (FD_ISSET(ttyfd, &rfd))
-			ttyread();
-
-		xev = 0;
-		while (XPending(xw.dpy)) {
-			xev = 1;
-			XNextEvent(xw.dpy, &ev);
-			if (XFilterEvent(&ev, None))
-				continue;
-			if (handler[ev.type])
-				(handler[ev.type])(&ev);
-		}
-
-		/*
-		 * To reduce flicker and tearing, when new content or event
-		 * triggers drawing, we first wait a bit to ensure we got
-		 * everything, and if nothing new arrives - we draw.
-		 * We start with trying to wait minlatency ms. If more content
-		 * arrives sooner, we retry with shorter and shorter periods,
-		 * and eventually draw even without idle after maxlatency ms.
-		 * Typically this results in low latency while interacting,
-		 * maximum latency intervals during `cat huge.txt`, and perfect
-		 * sync with periodic updates from animations/key-repeats/etc.
-		 */
-		if (FD_ISSET(ttyfd, &rfd) || xev) {
-			if (!drawing) {
-				trigger = now;
-				drawing = 1;
-			}
-			timeout = (maxlatency - TIMEDIFF(now, trigger)) \
-			          / maxlatency * minlatency;
-			if (timeout > 0)
-				continue;  /* we have time, try to find idle */
-		}
-
-		/* idle detected or maxlatency exhausted -> draw */
-		timeout = -1;
-		if (blinktimeout && tattrset(ATTR_BLINK)) {
-			timeout = blinktimeout - TIMEDIFF(now, lastblink);
-			if (timeout <= 0) {
-				if (-timeout > blinktimeout) /* start visible */
-					win.mode |= MODE_BLINK;
-				win.mode ^= MODE_BLINK;
-				tsetdirtattr(ATTR_BLINK);
-				lastblink = now;
-				timeout = blinktimeout;
-			}
-		}
-
-		draw();
-		/* A yank flash must expire without another key or child output. */
-		copytimeout = browsetimeout();
-		if (copytimeout >= 0 && (timeout < 0 || copytimeout < timeout))
-			timeout = copytimeout;
-		XFlush(xw.dpy);
-		drawing = 0;
-	}
+    XEvent ev;
+    int w = win.w, h = win.h, xfd = XConnectionNumber(xw.dpy);
+    struct timespec now, lastblink = {0}, trigger = {0};
+    double timeout = -1;
+    int drawing = 0;
+    do {
+        XNextEvent(xw.dpy, &ev);
+        if (XFilterEvent(&ev, None)) continue;
+        if (ev.type == ConfigureNotify) { w = ev.xconfigure.width; h = ev.xconfigure.height; }
+    } while (ev.type != MapNotify);
+    if (ttynew(opt_line, shell, opt_io, opt_cmd) < 0) die("cannot open shell: %s\n", strerror(errno));
+    cresize(w, h);
+    while (session_count()) {
+        size_t count = session_count();
+        struct pollfd *fds = xmalloc((count + 2) * sizeof(*fds));
+        Session **owners = xmalloc(count * sizeof(*owners));
+        fds[0] = (struct pollfd){.fd = xfd, .events = POLLIN};
+        fds[1] = (struct pollfd){.fd = session_signal_fd(), .events = POLLIN};
+        for (size_t i = 0; i < count; i++) {
+            owners[i] = session_at(i);
+            fds[i+2] = (struct pollfd){.fd = session_fd(owners[i]),
+                .events = POLLIN | (session_pending(owners[i]) ? POLLOUT : 0)};
+        }
+        int wait = XPending(xw.dpy) ? 0 : timeout < 0 ? -1 : (int)ceil(timeout);
+        int ready = poll(fds, count + 2, wait), changed = 0;
+        if (ready < 0 && errno != EINTR) die("poll failed: %s\n", strerror(errno));
+        clock_gettime(CLOCK_MONOTONIC, &now);
+        for (size_t i = 0; i < count; i++) {
+            if (fds[i+2].revents & (POLLIN | POLLHUP | POLLERR)) { session_read(owners[i]); changed = 1; }
+            if (fds[i+2].revents & POLLOUT) session_flush(owners[i]);
+        }
+        free(fds); free(owners);
+        uint64_t oldactive = session_view(session_active())->id;
+        if (sessions_reap()) {
+            if (!session_count()) break;
+            tabschanged(); changed = 1;
+            if (oldactive != session_view(session_active())->id && (win.mode & MODE_FOCUSED) && IS_SET(MODE_FOCUS))
+                ttywrite("\033[I", 3, 0);
+        }
+        while (session_count() && XPending(xw.dpy)) {
+            XNextEvent(xw.dpy, &ev);
+            if (XFilterEvent(&ev, None)) continue;
+            if (handler[ev.type]) handler[ev.type](&ev);
+            changed = 1;
+        }
+        if (!session_count()) break;
+        if (changed) {
+            if (!drawing) { trigger = now; drawing = 1; }
+            timeout = (maxlatency - TIMEDIFF(now, trigger)) / maxlatency * minlatency;
+            if (timeout > 0) continue;
+        }
+        timeout = -1;
+        if (blinktimeout && tattrset(ATTR_BLINK)) {
+            timeout = blinktimeout - TIMEDIFF(now, lastblink);
+            if (timeout <= 0) {
+                win.mode ^= MODE_BLINK; tsetdirtattr(ATTR_BLINK);
+                lastblink = now; timeout = blinktimeout;
+            }
+        }
+        draw();
+        double copytimeout = browsetimeout();
+        if (copytimeout >= 0 && (timeout < 0 || copytimeout < timeout)) timeout = copytimeout;
+        XFlush(xw.dpy); drawing = 0;
+    }
+    sessions_free();
 }
 
 void
@@ -2229,3 +2258,5 @@ run:
 
 	return 0;
 }
+
+#include "tabs.c"

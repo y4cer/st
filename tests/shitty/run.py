@@ -36,7 +36,6 @@ EXCLUDED = {
     'test_desktop_identity':'Shitty desktop integration',
     'test_debug_trace':'Shitty trace instrumentation',
     'test_dump':'Shitty dump CLI',
-    'test_tabs':'Shitty multiple sessions/tabs (absent in st)',
     'test_sixel':'Sixel graphics (absent in st)',
     'test_contour_kitty_clipboard':'Kitty OSC 5522 clipboard protocol (absent in st)',
     'test_unicode_grapheme_matrix':'Unicode grapheme storage/conformance API (absent in st)',

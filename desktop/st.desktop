@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=st
+Comment=Simple terminal
+Exec="@PREFIX@/bin/st"
+TryExec=@PREFIX@/bin/st
+Icon=st-suckless
+Terminal=false
+Categories=System;TerminalEmulator;
+Keywords=terminal;shell;
+StartupWMClass=st-256color

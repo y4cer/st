@@ -140,6 +140,7 @@ class Shitty:
         self._selector = selectors.DefaultSelector()
         self._selector.register(self.process.stdout,selectors.EVENT_READ)
         self._pending = b''
+        self._selections = {}
         self._frontend = None
         self._glyph_px, self._glyph_py = glyph_px, glyph_py
         self._selection_type = 1
@@ -187,6 +188,26 @@ class Shitty:
         if code: raise RuntimeError(f'st bridge exit {code}: {errors}')
     def __enter__(self): return self
     def __exit__(self,*args): self.close()
+    def session_state(self): return tuple(self.command('Y'))
+    def _session_action(self,command):
+        self._selections[self._state()['session_id']]=(self._selection_anchor,self._selection_end,self._selection_type,self._snap)
+        self.command(command)
+        self._selection_anchor,self._selection_end,self._selection_type,self._snap=self._selections.get(self._state()['session_id'],((0,0),(0,0),1,0))
+    def new_session(self): self._session_action('N')
+    def close_session(self,index): self._session_action(f'L {index}')
+    def chord_next_tab(self):
+        count,at=self.session_state();self._session_action(f'Z {(at+1)%count}')
+    def chord_prev_tab(self):
+        count,at=self.session_state();self._session_action(f'Z {(at-1)%count}')
+    def chord_close_tab(self): self.close_session(self.session_state()[1])
+    def chord_clear(self): self.frontend_control('L')
+    def write_to(self,index,data):
+        if isinstance(data,str):data=data.encode()
+        self.command(f'w {index} '+data.hex())
+    def read_input_of(self,index): return bytes.fromhex(self.command(f'I {index}'))
+    def present(self): self.command('P')
+    def winsize(self):
+        s=self._state();return s['columns'],s['rows']
     def write(self,data):
         if isinstance(data,str): data=data.encode()
         self.command('W '+data.hex())
@@ -292,7 +313,8 @@ class Shitty:
         if encoded is None: unsupported('st UI shortcut consumes this key before terminal input')
         if deliver:self.command('J '+encoded)
         return bytes.fromhex(encoded)
-    def focus(self,focused): self._event('F',int(focused))
+    def focus(self,focused):
+        self._event('F',int(focused));self.command(f'F {int(focused)}')
     def paste(self,data):
         if isinstance(data,str):data=data.encode()
         if b'\0' in data: unsupported('binary clipboard payload requires X11 property fixture')

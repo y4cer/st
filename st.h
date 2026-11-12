@@ -132,3 +132,37 @@ extern unsigned int tabspaces;
 extern unsigned int defaultfg;
 extern unsigned int defaultbg;
 extern unsigned int defaultcs;
+
+/* A session owns terminal/PTY state; the bound context is independent of the
+ * visible session. Only synchronous core dispatch may temporarily bind it. */
+typedef struct Session Session;
+typedef struct {
+    uint64_t id;
+    unsigned int mode;
+    int cursor, activity;
+    char *title, *icon;
+    void *palette;
+    size_t palette_len;
+} SessionView;
+Session *session_current(void);
+Session *session_active(void);
+Session *session_at(size_t);
+Session *session_find(uint64_t);
+Session *session_bind(Session *);
+Session *session_new(int, int);
+SessionView *session_view(Session *);
+size_t session_count(void);
+size_t session_index(Session *);
+void session_select(Session *);
+void session_switch(Session *, int);
+void session_close(Session *);
+void sessions_free(void);
+void sessions_resize(int, int, int, int);
+int sessions_reap(void);
+int session_signal_fd(void);
+int session_fd(Session *);
+int session_pending(Session *);
+void session_read(Session *);
+void session_flush(Session *);
+void session_write(Session *, const char *, size_t, int);
+void session_feed(Session *, const char *, size_t);

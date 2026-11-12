@@ -97,6 +97,18 @@ unsigned int tabspaces = 8; /* must be > 0 */
 /* Background opacity: 0.0 = transparent, 1.0 = opaque. Override with -A. */
 float alpha = 0.9;
 
+/* Tab chrome is opaque and independent of application OSC palette changes. */
+static const char *tabcolorname[] = {
+    [TabBar] = "#252b2d",
+    [TabInactive] = "#3c4548",
+    [TabBorder] = "#59656a",
+    [TabActive] = "#9ac3b6",
+    [TabText] = "#e8e3d9",
+    [TabActiveText] = "#172321",
+    [TabAccent] = "#cae8db",
+    [TabActivity] = "#e3bd76",
+};
+
 /* Terminal colors (16 first used in escape sequence) */
 static const char *colorname[] = {
 	/* Custom Gruvbox Material Dark Hard: brighter neutral text,
@@ -197,6 +209,20 @@ static MouseShortcut mshortcuts[] = {
 #define TERMMOD (ControlMask|ShiftMask)
 
 static Shortcut shortcuts[] = {
+    { TERMMOD, XK_T, tabnew, {.i = 0} },
+    { TERMMOD, XK_W, tabclose, {.i = 0} },
+    { ControlMask, XK_Tab, tabnext, {.i = 1} },
+    { TERMMOD, XK_ISO_Left_Tab, tabnext, {.i = -1} },
+    { TERMMOD, XK_Tab, tabnext, {.i = -1} },
+    { Mod1Mask, XK_1, tabselect, {.i = 0} },
+    { Mod1Mask, XK_2, tabselect, {.i = 1} },
+    { Mod1Mask, XK_3, tabselect, {.i = 2} },
+    { Mod1Mask, XK_4, tabselect, {.i = 3} },
+    { Mod1Mask, XK_5, tabselect, {.i = 4} },
+    { Mod1Mask, XK_6, tabselect, {.i = 5} },
+    { Mod1Mask, XK_7, tabselect, {.i = 6} },
+    { Mod1Mask, XK_8, tabselect, {.i = 7} },
+    { Mod1Mask, XK_9, tabselect, {.i = 8} },
 	/* mask                 keysym          function        argument */
 	{ TERMMOD,              XK_space,       browse,         {.i =  0} },
 	{ XK_ANY_MOD,           XK_Break,       sendbreak,      {.i =  0} },

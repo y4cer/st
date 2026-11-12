@@ -5,13 +5,14 @@ Pinned Shitty revision: `509bd3f95778729d9890c68ab150d94bff372a0e` (2026-11-12).
 Ordinary and ASan/UBSan/LSan runs have identical dispositions and fingerprints.
 Exact reasons: [baseline.json](baseline.json); independent review: [REVIEW.md](REVIEW.md).
 
-Of 9,206 inventoried cases, 3,853 pass, 1,581 retain reviewed assertion differences,
-and 3,772 are explicitly excluded. Of the passes, **1,096 are streaming-invariance
-checks** against the same st (including all 400 fuzz seeds); **2,757 compare
+Of 9,206 inventoried cases, 3,928 pass, 1,564 retain reviewed assertion differences,
+and 3,714 are explicitly excluded. Of the passes, **1,096 are streaming-invariance
+checks** against the same st (including all 400 fuzz seeds); **2,832 compare
 reference assertions or documented golden projections**. These are not claims of
 full Shitty compatibility. Known failures may stop scenarios before later checks.
 
-The 60 native regressions, 13 adapter contracts and four gate-policy tests pass
+The 74 native regressions, seven session-manager cases, 13 adapter contracts
+and four gate-policy tests pass
 in addition to that inventory. Libvterm's completed fixtures check 818 assertions
 and skip 154 source operations/assertions; four passing fixtures are partial.
 Its checked/skipped counts are pinned, including failed fixtures. See README.md
@@ -19,7 +20,7 @@ for palette/text projections and headless exclusions.
 
 | Source module / corpus | PASS | XFAIL | Excluded |
 |---|---:|---:|---:|
-| alacritty/main | 20 | 21 | 4 |
+| alacritty/main | 10 | 31 | 4 |
 | contour/main | 0 | 0 | 18 |
 | esctest/main | 247 | 273 | 29 |
 | fuzz_corpus/main | 374 | 0 | 26 |
@@ -39,10 +40,10 @@ for palette/text projections and headless exclusions.
 | realworld/main | 200 | 28 | 54 |
 | tack/main | 0 | 0 | 118 |
 | termless/main | 41 | 5 | 0 |
-| test_alacritty_grid_storage | 13 | 13 | 1 |
+| test_alacritty_grid_storage | 15 | 11 | 1 |
 | test_alacritty_index_cell | 9 | 4 | 2 |
 | test_alacritty_selection | 3 | 5 | 9 |
-| test_alacritty_terminal_core | 5 | 15 | 4 |
+| test_alacritty_terminal_core | 6 | 14 | 4 |
 | test_bitmap_font_render | 0 | 0 | 6 |
 | test_block_elements | 0 | 0 | 8 |
 | test_build_metadata | 0 | 0 | 16 |
@@ -53,7 +54,7 @@ for palette/text projections and headless exclusions.
 | test_color_scheme | 0 | 2 | 10 |
 | test_config | 0 | 0 | 21 |
 | test_contour_checksum | 0 | 11 | 1 |
-| test_contour_grid | 0 | 13 | 2 |
+| test_contour_grid | 1 | 12 | 2 |
 | test_contour_input_generator | 0 | 5 | 9 |
 | test_contour_kitty_clipboard | 0 | 0 | 23 |
 | test_contour_screen | 119 | 90 | 178 |
@@ -106,8 +107,8 @@ for palette/text projections and headless exclusions.
 | test_ghostty_key_encoding_legacy | 8 | 6 | 7 |
 | test_ghostty_key_encoding_tail | 14 | 11 | 7 |
 | test_ghostty_pagelist_capacity_iteration | 15 | 1 | 5 |
-| test_ghostty_pagelist_clone_resize | 15 | 3 | 3 |
-| test_ghostty_pagelist_compression | 11 | 9 | 1 |
+| test_ghostty_pagelist_clone_resize | 14 | 4 | 3 |
+| test_ghostty_pagelist_compression | 13 | 7 | 1 |
 | test_ghostty_pagelist_coordinates | 12 | 4 | 5 |
 | test_ghostty_pagelist_limits | 2 | 12 | 7 |
 | test_ghostty_pagelist_reflow_capacity | 3 | 11 | 7 |
@@ -127,8 +128,8 @@ for palette/text projections and headless exclusions.
 | test_ghostty_screen_clone_history | 14 | 3 | 4 |
 | test_ghostty_screen_cursor_style_scrollback | 13 | 1 | 10 |
 | test_ghostty_screen_prompt_click_tail | 1 | 0 | 9 |
-| test_ghostty_screen_resize_history | 14 | 6 | 2 |
-| test_ghostty_screen_resize_reflow | 3 | 16 | 4 |
+| test_ghostty_screen_resize_history | 11 | 9 | 2 |
+| test_ghostty_screen_resize_reflow | 6 | 13 | 4 |
 | test_ghostty_screen_resize_wide_prompt | 8 | 9 | 6 |
 | test_ghostty_screen_scroll_region_history | 16 | 4 | 1 |
 | test_ghostty_screen_selection | 7 | 12 | 4 |
@@ -147,20 +148,20 @@ for palette/text projections and headless exclusions.
 | test_iterm2_grid_range | 0 | 1 | 32 |
 | test_iterm2_legacy_grid_core | 6 | 12 | 3 |
 | test_iterm2_legacy_grid_editing | 7 | 5 | 9 |
-| test_iterm2_legacy_grid_tail_semantic_head | 6 | 6 | 9 |
+| test_iterm2_legacy_grid_tail_semantic_head | 10 | 2 | 9 |
 | test_iterm2_legacy_screen | 8 | 5 | 8 |
-| test_iterm2_legacy_screen_annotation_restore | 0 | 1 | 20 |
-| test_iterm2_legacy_screen_controls | 2 | 5 | 14 |
+| test_iterm2_legacy_screen_annotation_restore | 1 | 0 | 20 |
+| test_iterm2_legacy_screen_controls | 1 | 6 | 14 |
 | test_iterm2_legacy_screen_resize_metadata | 4 | 2 | 15 |
 | test_iterm2_legacy_screen_search | 1 | 3 | 17 |
 | test_iterm2_legacy_screen_tail_grid_head | 8 | 2 | 11 |
-| test_iterm2_line_block | 57 | 34 | 24 |
-| test_iterm2_line_buffer | 42 | 11 | 23 |
+| test_iterm2_line_block | 74 | 28 | 13 |
+| test_iterm2_line_buffer | 49 | 11 | 16 |
 | test_iterm2_semantic_history_cleanup_actions | 0 | 0 | 21 |
 | test_iterm2_semantic_history_editors_finder | 0 | 0 | 21 |
 | test_iterm2_semantic_history_tail | 0 | 0 | 7 |
 | test_iterm2_terminal_hard_rules | 0 | 0 | 21 |
-| test_iterm2_vt100_grid | 56 | 18 | 85 |
+| test_iterm2_vt100_grid | 61 | 13 | 85 |
 | test_iterm2_vt100_screen | 13 | 2 | 51 |
 | test_iterm2_xterm_parser | 0 | 2 | 26 |
 | test_keyboard | 8 | 4 | 31 |
@@ -206,11 +207,11 @@ for palette/text projections and headless exclusions.
 | test_resize_margins_tabs | 4 | 0 | 3 |
 | test_resize_reflow | 1 | 7 | 0 |
 | test_resize_same_grid_pixels | 0 | 0 | 4 |
-| test_resize_viewport | 0 | 6 | 0 |
+| test_resize_viewport | 2 | 4 | 0 |
 | test_resize_wide_grapheme | 2 | 1 | 1 |
 | test_run_timed | 0 | 0 | 2 |
 | test_screen_corners | 0 | 2 | 3 |
-| test_scrollback | 10 | 18 | 2 |
+| test_scrollback | 12 | 16 | 2 |
 | test_selection | 4 | 3 | 3 |
 | test_selection_autoscroll | 0 | 0 | 9 |
 | test_selection_direction_matrix | 0 | 5 | 0 |
@@ -227,7 +228,7 @@ for palette/text projections and headless exclusions.
 | test_startup | 0 | 0 | 4 |
 | test_synthesized_symbols | 0 | 0 | 2 |
 | test_system_emoji_fallback | 0 | 0 | 1 |
-| test_tabs | 0 | 0 | 26 |
+| test_tabs | 21 | 0 | 5 |
 | test_term_features | 0 | 0 | 5 |
 | test_terminal_colors_data | 0 | 0 | 4 |
 | test_terminal_layout | 0 | 0 | 7 |
@@ -283,7 +284,7 @@ for palette/text projections and headless exclusions.
 | test_tmux_regress_tty_keys_rxvt_function | 22 | 0 | 1 |
 | test_tmux_regress_tty_keys_tail | 5 | 5 | 1 |
 | test_tmux_regress_unicode_replies | 3 | 3 | 15 |
-| test_tmux_regress_window_ops | 0 | 0 | 21 |
+| test_tmux_regress_window_ops | 19 | 0 | 2 |
 | test_toml | 0 | 0 | 3 |
 | test_unicode | 0 | 0 | 17 |
 | test_unicode_charset_matrix | 5 | 16 | 2 |
@@ -304,13 +305,13 @@ for palette/text projections and headless exclusions.
 | test_windows_terminal_reflow | 0 | 1 | 0 |
 | test_windows_terminal_screen_buffer | 29 | 16 | 50 |
 | test_windows_terminal_selection | 9 | 12 | 0 |
-| test_xtermjs_buffer | 26 | 30 | 8 |
+| test_xtermjs_buffer | 28 | 28 | 8 |
 | test_xtermjs_buffer_line | 9 | 10 | 33 |
 | test_xtermjs_buffer_reflow | 1 | 6 | 1 |
 | test_xtermjs_control_string_parsers | 0 | 0 | 64 |
 | test_xtermjs_escape_sequence_parser | 0 | 0 | 162 |
 | test_xtermjs_input_handler_colors_erase | 7 | 6 | 8 |
-| test_xtermjs_input_handler_core | 5 | 13 | 3 |
+| test_xtermjs_input_handler_core | 6 | 12 | 3 |
 | test_xtermjs_input_handler_cursor | 10 | 0 | 11 |
 | test_xtermjs_input_handler_cursor_bounds | 20 | 0 | 1 |
 | test_xtermjs_input_handler_margins | 12 | 5 | 4 |
@@ -348,7 +349,7 @@ for palette/text projections and headless exclusions.
 | wraptest/main | 0 | 0 | 25 |
 | xterm_vttests/main | 0 | 3 | 57 |
 | xtermjs/main | 60 | 16 | 0 |
-| **Total** | **3853** | **1581** | **3772** |
+| **Total** | **3928** | **1564** | **3714** |
 
 The expansion caught three production defects now covered by focused tests:
 

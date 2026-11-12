@@ -1,14 +1,6 @@
 /* Read-only Vim-style copy mode. Included by st.c to access terminal cells.
  * The snapshot is independent of the live terminal and its scrollback ring.
  */
-static struct {
-	int active, cols, rows, top, x, y, anchor, visual, count, g;
-	int searching, direction, querylen;
-	int flashing, flashstart, flashend;
-	struct timespec flashuntil;
-	Rune query[128];
-	Glyph *cells, *view;
-} br;
 
 int
 browseactive(void)

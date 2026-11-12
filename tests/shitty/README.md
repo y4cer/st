@@ -20,7 +20,8 @@ under ignored `tests/bin/`. A full run takes several minutes.
 ## What actually runs
 
 - `bridge.c` executes **the repository's real st.c**: parsing, cells, cursor,
-  attributes, screen swaps, resize, history, selection, and terminal replies.
+  attributes, screen swaps, resize, history, selection, terminal replies and
+  the session manager. Each session has its own socket endpoint and reply buffer.
 - `frontend.c` executes **the repository's real x.c**: key mapping/routing, focus
   reports, paste delivery and mouse-report encoding. X11 lookup/property callbacks
   supply deterministic platform input; no desktop or clipboard is touched.
@@ -72,10 +73,52 @@ no automatic “accept failures” command in the test target.
 
 ## Adaptation boundaries
 
-Shitty-specific GPU/font shaping, Cocoa/Wayland window lifecycle, multi-session
-management, configuration parser, shell integration, Kitty protocols, reflow and
+Shitty-specific GPU/font shaping, Cocoa/Wayland window lifecycle,
+configuration parser, shell integration, Kitty protocols, reflow and
 Unicode-table APIs have no direct st equivalent. Native `copy_*`, selection,
 X11 INCR and history stress regressions remain alongside this suite.
+
+Native tabs use the actual `lib/shitty/session.{h,cpp}` and `session_ut.cpp` at
+the pinned revision as the ownership/lifecycle reference. Of the 26 source
+`test_tabs.py` cases, 21 now execute and pass. Five remain explicitly excluded:
+platform selection gestures, Kitty keyboard, host clipboard access, Shitty's
+stalled-PTY injection and renderer blink-tick API. Headless `present` invokes
+the real st draw path with callbacks; `winsize` reports its grid, not a kernel
+PTY query. Tab chord actions in this adapter invoke the real session manager;
+actual shortcut dispatch, Xft palettes and all-child PTY sizing are checked by
+`make test-x11`. Native tests also exercise real write backpressure and INCR
+paste ownership; they do not relabel excluded source cases as passes.
+
+The tabs change enables 57 formerly excluded cases: 21 tab cases, 17 independent
+screen/history-storage cases and 19 window/session-operation cases. No previously
+executed result or assertion fingerprint changed. Ten exclusion explanations now
+identify the remaining unsupported API instead of the former session boundary.
+One newly executable case, `test_bounded_truncate_changes_only_the_overflowing_session`,
+is a reviewed assertion difference: it requests `save_lines=2`, while st retains
+its fixed 2000-line history and reports four lines instead of two at its first
+assertion. It does not establish coverage of the later assertions in that case.
+The independent review in REVIEW.md predates tabs; this delta was self-reviewed
+and checked by normal, sanitizer and real X11 runs.
+
+The subsequent user-requested vertical-resize policy keeps an already-bottom
+cursor at the lower edge. This deliberately differs from reference profiles
+that append blank rows below a full screen when history is exhausted, and from
+the old ConPTY profile that never pulls history. See [RESIZE.md](RESIZE.md) for
+the assertion-by-assertion baseline review. Source assertions were not changed.
+
+The user's subsequent clear-screen preference saves populated primary rows to
+scrollback on ED2 (as in the source xterm.js `scrollOnEraseInDisplay` scenario).
+This makes that scenario pass. Two cases expecting ED2 to leave history empty or
+remove all nonempty text now record policy differences. Three existing failing
+cases have reviewed fingerprint changes: a parked viewport's numeric offset now
+increases to keep its text anchored, ED3/ED2 now retains one additional visible
+line (ED3 remains unsupported), and the line-mutation matrix additionally hits
+the retained-history policy in its `fill` subtest. Native tests check the visible
+screen stays blank and cursor/margins are unchanged; partial/alternate erases
+still use the former behavior. Original source assertions remain intact.
+Twelve Alacritty recordings also retain extra history after ED2; their exact
+row-count changes and separate viewport comparison are reviewed in
+[CLEAR.md](CLEAR.md). Those are recorded differences, not passing corpus cases.
 
 Interactive tack/vttest/wraptest drivers require Shitty's process-control API and
 are inventoried separately; corresponding portable cursor/editing/wrapping cases

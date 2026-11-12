@@ -126,6 +126,7 @@ typedef struct {
 	int histi;    /* history index */
 	int histlen;  /* number of populated history lines */
 	int scr;      /* scroll back */
+	int resizepad; /* synthetic blank prefix inserted to keep output at bottom */
 	int *dirty;   /* dirtyness of lines */
 	TCursor c;    /* cursor */
 	int ocx;      /* old cursor col */
@@ -184,6 +185,7 @@ static void tdumpsel(void);
 static void tdumpline(int);
 static void tdump(void);
 static void tclearregion(int, int, int, int);
+static void tsaveview(void);
 static void tcursor(int);
 static void tdeletechar(int);
 static void tdeleteline(int);
@@ -227,14 +229,44 @@ static char base64dec_getc(const char **);
 
 static ssize_t xwrite(int, const char *, size_t);
 
-/* Globals */
-static Term term;
-static Selection sel;
-static CSIEscape csiescseq;
-static STREscape strescseq;
-static int iofd = 1;
-static int cmdfd;
-static pid_t pid;
+typedef struct {
+	int active, cols, rows, top, x, y, anchor, visual, count, g;
+	int searching, direction, querylen;
+	int flashing, flashstart, flashend;
+	struct timespec flashuntil;
+	Rune query[128];
+	Glyph *cells, *view;
+} Browse;
+
+
+struct Session {
+    Term screen;
+    Selection selection;
+    CSIEscape csi;
+    STREscape str;
+    TCursor saved[2];
+    Browse copy;
+    int ptyfd, logfd, ended;
+    pid_t child;
+    char input[BUFSIZ];
+    size_t inputlen;
+    char *output;
+    size_t outputlen, outputpos;
+    SessionView view;
+    Session *next;
+};
+static Session initial = {.ptyfd = -1, .logfd = 1, .view = {.id = 1, .cursor = 1}};
+static Session *context = &initial, *active = &initial, *head = &initial;
+static uint64_t next_session_id = 2;
+static int childpipe[2] = {-1, -1};
+#define term (context->screen)
+#define sel (context->selection)
+#define csiescseq (context->csi)
+#define strescseq (context->str)
+#define cmdfd (context->ptyfd)
+#define iofd (context->logfd)
+#define pid (context->child)
+#define br (context->copy)
 
 ssize_t
 xwrite(int fd, const char *s, size_t len)
@@ -647,25 +679,11 @@ execsh(char *cmd, char **args)
 void
 sigchld(int a)
 {
-	int stat, olderrno;
-	pid_t p;
-
-	olderrno = errno;
-	do {
-		p = waitpid(pid, &stat, WNOHANG);
-	} while (p < 0 && errno == EINTR);
-
-	if (p < 0)
-		_exit(1);
-
-	if (pid != p) {
-		errno = olderrno;
-		return;
-	}
-
-	if ((WIFEXITED(stat) && WEXITSTATUS(stat)) || WIFSIGNALED(stat))
-		_exit(1);
-	_exit(0);
+    int saved = errno;
+    char wake = 1;
+    (void)a;
+    if (childpipe[1] >= 0) { ssize_t n = write(childpipe[1], &wake, 1); (void)n; }
+    errno = saved;
 }
 
 void
@@ -713,19 +731,26 @@ ttynew(const char *line, char *cmd, const char *out, char **args)
 			    line, strerror(errno));
 		dup2(cmdfd, 0);
 		stty(args);
+        fcntl(cmdfd, F_SETFL, fcntl(cmdfd, F_GETFL) | O_NONBLOCK);
+        fcntl(cmdfd, F_SETFD, FD_CLOEXEC);
 		return cmdfd;
 	}
 
 	/* seems to work fine on linux, openbsd and freebsd */
-	if (openpty(&m, &s, NULL, NULL, NULL) < 0)
-		die("openpty failed: %s\n", strerror(errno));
+	if (session_signal_fd() < 0 || openpty(&m, &s, NULL, NULL, NULL) < 0)
+        return -1;
+    if (m >= FD_SETSIZE) { close(m); close(s); errno = EMFILE; return -1; }
 
 	switch (pid = fork()) {
 	case -1:
-		die("fork failed: %s\n", strerror(errno));
-		break;
+		close(m); close(s); return -1;
 	case 0:
-		close(iofd);
+        for (Session *other = head; other; other = other->next) {
+            if (other->ptyfd >= 0 && other->ptyfd != m && other->ptyfd != s) close(other->ptyfd);
+            if (other->logfd > 2 && other->logfd != m && other->logfd != s) close(other->logfd);
+        }
+        close(childpipe[0]); close(childpipe[1]);
+        if (iofd > 2) close(iofd);
 		close(m);
 		setsid(); /* create a new process group */
 		dup2(s, 0);
@@ -748,6 +773,8 @@ ttynew(const char *line, char *cmd, const char *out, char **args)
 #endif
 		close(s);
 		cmdfd = m;
+        fcntl(m, F_SETFL, fcntl(m, F_GETFL) | O_NONBLOCK);
+        fcntl(m, F_SETFD, FD_CLOEXEC);
 		signal(SIGCHLD, sigchld);
 		break;
 	}
@@ -757,27 +784,16 @@ ttynew(const char *line, char *cmd, const char *out, char **args)
 size_t
 ttyread(void)
 {
-	static char buf[BUFSIZ];
-	static int buflen = 0;
-	int ret, written;
-
-	/* append read bytes to unprocessed bytes */
-	ret = read(cmdfd, buf+buflen, LEN(buf)-buflen);
-
-	switch (ret) {
-	case 0:
-		exit(0);
-	case -1:
-		die("couldn't read from shell: %s\n", strerror(errno));
-	default:
-		buflen += ret;
-		written = twrite(buf, buflen, 0);
-		buflen -= written;
-		/* keep any incomplete UTF-8 byte sequence for the next call */
-		if (buflen > 0)
-			memmove(buf, buf + written, buflen);
-		return ret;
-	}
+    ssize_t n = read(cmdfd, context->input + context->inputlen,
+                     sizeof(context->input) - context->inputlen);
+    if (n < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)) return 0;
+    if (n <= 0) { context->ended = 1; return 0; }
+    context->inputlen += n;
+    size_t used = twrite(context->input, context->inputlen, 0);
+    context->inputlen -= used;
+    memmove(context->input, context->input + used, context->inputlen);
+    if (context != active) context->view.activity = 1;
+    return n;
 }
 
 void
@@ -814,58 +830,18 @@ ttywrite(const char *s, size_t n, int may_echo)
 void
 ttywriteraw(const char *s, size_t n)
 {
-	fd_set wfd, rfd;
-	ssize_t r;
-	size_t lim = 256;
-
-	/*
-	 * Remember that we are using a pty, which might be a modem line.
-	 * Writing too much will clog the line. That's why we are doing this
-	 * dance.
-	 * FIXME: Migrate the world to Plan 9.
-	 */
-	while (n > 0) {
-		FD_ZERO(&wfd);
-		FD_ZERO(&rfd);
-		FD_SET(cmdfd, &wfd);
-		FD_SET(cmdfd, &rfd);
-
-		/* Check if we can write. */
-		if (pselect(cmdfd+1, &rfd, &wfd, NULL, NULL, NULL) < 0) {
-			if (errno == EINTR)
-				continue;
-			die("select failed: %s\n", strerror(errno));
-		}
-		if (FD_ISSET(cmdfd, &wfd)) {
-			/*
-			 * Only write the bytes written by ttywrite() or the
-			 * default of 256. This seems to be a reasonable value
-			 * for a serial line. Bigger values might clog the I/O.
-			 */
-			if ((r = write(cmdfd, s, (n < lim)? n : lim)) < 0)
-				goto write_error;
-			if (r < n) {
-				/*
-				 * We weren't able to write out everything.
-				 * This means the buffer is getting full
-				 * again. Empty it.
-				 */
-				if (n < lim)
-					lim = ttyread();
-				n -= r;
-				s += r;
-			} else {
-				/* All bytes have been written. */
-				break;
-			}
-		}
-		if (FD_ISSET(cmdfd, &rfd))
-			lim = ttyread();
-	}
-	return;
-
-write_error:
-	die("write error on tty: %s\n", strerror(errno));
+    if (cmdfd < 0 || context->ended) return;
+    if (n >= SIZE_MAX - context->outputlen) die("PTY output too large\n");
+    if (context->outputpos) {
+        memmove(context->output, context->output + context->outputpos,
+                context->outputlen - context->outputpos);
+        context->outputlen -= context->outputpos;
+        context->outputpos = 0;
+    }
+    context->output = xrealloc(context->output, context->outputlen + n + 1);
+    memcpy(context->output + context->outputlen, s, n);
+    context->outputlen += n;
+    session_flush(context);
 }
 
 void
@@ -885,7 +861,7 @@ void
 ttyhangup(void)
 {
 	/* Send SIGHUP to shell */
-	kill(pid, SIGHUP);
+	if (pid > 0) kill(-pid, SIGHUP);
 }
 
 int
@@ -942,7 +918,7 @@ tfulldirt(void)
 void
 tcursor(int mode)
 {
-	static TCursor c[2];
+	TCursor *c = context->saved;
 	int alt = IS_SET(MODE_ALTSCREEN);
 
 	if (mode == CURSOR_SAVE) {
@@ -959,6 +935,7 @@ treset(void)
 	uint i;
 
 	term.scr = term.histlen = term.histi = 0;
+	term.resizepad = 0;
 	selclear();
 	if (IS_SET(MODE_ALTSCREEN)) tswapscreen();
 
@@ -1052,6 +1029,7 @@ tscrolldown(int orig, int n, int copyhist)
 	LIMIT(n, 0, term.bot-orig+1);
 	if (n == 0)
 		return;
+	if (!IS_SET(MODE_ALTSCREEN)) term.resizepad = MIN(term.resizepad, orig);
 
 	/* Reverse index never appends to (or rewinds) normal scrollback. */
 	(void)copyhist;
@@ -1079,7 +1057,7 @@ tscrollup(int orig, int n, int copyhist)
 	if (n == 0)
 		return;
 
-	if (copyhist && n > 0 && orig == 0 && term.bot == term.row - 1 &&
+	if (copyhist && n > 0 && orig == 0 && term.bot == term.row - 1 && !term.resizepad &&
 	    !IS_SET(MODE_ALTSCREEN)) {
 		term.histlen = MIN(term.histlen + 1, HISTSIZE);
 		term.histi = (term.histi + 1) % HISTSIZE;
@@ -1102,6 +1080,12 @@ tscrollup(int orig, int n, int copyhist)
 
 	if (term.scr == 0)
 		selscroll(orig, -n);
+	if (!IS_SET(MODE_ALTSCREEN)) {
+		if (orig == 0 && term.bot == term.row - 1)
+			term.resizepad = MAX(0, term.resizepad - n);
+		else
+			term.resizepad = MIN(term.resizepad, orig);
+	}
 }
 
 void
@@ -1199,6 +1183,8 @@ tmoveto(int x, int y)
 void
 tsetchar(Rune u, const Glyph *attr, int x, int y)
 {
+	/* Explicit output turns that padding row into real terminal content. */
+	if (!IS_SET(MODE_ALTSCREEN)) term.resizepad = MIN(term.resizepad, y);
 	static const char *vt100_0[62] = { /* 0x41 - 0x7e */
 		"↑", "↓", "→", "←", "█", "▚", "☃", /* A - G */
 		0, 0, 0, 0, 0, 0, 0, 0, /* H - O */
@@ -1248,6 +1234,31 @@ repairwide(Line line, int cols)
 			line[x].mode &= ~(ATTR_WIDE | ATTR_WDUMMY);
 		}
 	}
+}
+
+/* Keep a cleared primary viewport reachable through scrollback. Save complete
+ * glyph rows, omitting unused trailing rows and synthetic resize padding. */
+void
+tsaveview(void)
+{
+	int last = -1, added = 0;
+	if (IS_SET(MODE_ALTSCREEN)) return;
+	for (int y = term.resizepad; y < term.row; y++)
+		for (int x = 0; x < term.col; x++)
+			if (term.line[y][x].u != ' ' || (term.line[y][x].mode & ATTR_WRAP)) {
+				last = y;
+				break;
+			}
+	for (int y = term.resizepad; y <= last; y++) {
+		term.histi = (term.histi + 1) % HISTSIZE;
+		Line empty = term.hist[term.histi];
+		term.hist[term.histi] = term.line[y];
+		term.line[y] = empty;
+		term.histlen = MIN(HISTSIZE, term.histlen + 1);
+		added++;
+	}
+	if (term.scr) term.scr = MIN(term.histlen, term.scr + added);
+	term.resizepad = 0;
 }
 
 void
@@ -1756,6 +1767,7 @@ csihandle(void)
 			tclearregion(0, term.c.y, term.c.x, term.c.y);
 			break;
 		case 2: /* all */
+			tsaveview();
 			tclearregion(0, 0, term.col-1, term.row-1);
 			break;
 		default:
@@ -2612,6 +2624,10 @@ void
 tresize(int col, int row)
 {
 	int i, j;
+	int oldrow = term.row;
+	int normal = !IS_SET(MODE_ALTSCREEN);
+	int growbottom = normal && oldrow > 0 && term.c.y == oldrow - 1 && row > oldrow;
+	int scroll = term.scr;
 	int minrow = MIN(row, term.row);
 	int mincol = MIN(col, term.col);
 	int *bp;
@@ -2627,6 +2643,16 @@ tresize(int col, int row)
 		fprintf(stderr,
 		        "tresize: error resizing to %dx%d\n", col, row);
 		return;
+	}
+	/* Evicted primary-screen rows belong in history, so shrinking and then
+	 * growing can recover the same output instead of dropping it. */
+	if (normal && oldrow > row && term.c.y >= row) {
+		int shift = term.c.y - row + 1;
+		tsetscroll(0, oldrow - 1);
+		for (i = 0; i < shift; i++) tscrollup(0, 1, 1);
+		term.c.y -= shift;
+		context->saved[0].y = MAX(0, context->saved[0].y - shift);
+		scroll = term.scr;
 	}
 
 	/*
@@ -2709,6 +2735,26 @@ tresize(int col, int row)
 		tcursor(CURSOR_LOAD);
 	}
 	term.c = c;
+	if (growbottom) {
+		int added = row - oldrow, restored = 0, padding = term.resizepad;
+		tscrolldown(0, added, 0);
+		/* Newest history rows sit immediately above the old viewport.
+		 * Extra space stays blank when history cannot fill the whole gap. */
+		for (i = added - 1; i >= 0 && term.histlen > 0; i--) {
+			Line empty = term.line[i];
+			term.line[i] = term.hist[term.histi];
+			term.hist[term.histi] = empty;
+			term.histi = (term.histi + HISTSIZE - 1) % HISTSIZE;
+			term.histlen--;
+			restored++;
+		}
+		term.c.y += added;
+		context->saved[0].y = MIN(row - 1, context->saved[0].y + added);
+		term.resizepad = added - restored + (restored ? 0 : padding);
+		scroll = MAX(0, scroll - restored);
+	}
+	if (normal && row != oldrow) term.scr = MIN(scroll, term.histlen);
+	term.resizepad = normal ? MIN(term.resizepad, row) : 0;
 	for (i = 0; i < row; i++) {
 		repairwide(term.line[i], col);
 		repairwide(term.alt[i], col);
@@ -2776,3 +2822,5 @@ redraw(void)
 }
 
 #include "browse.c"
+
+#include "session.c"

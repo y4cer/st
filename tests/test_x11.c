@@ -5,6 +5,28 @@
 #define main st_application_main
 #include "../x.c"
 #undef main
+/* Frontend tests supply one core endpoint, never a terminal model. */
+struct Session { SessionView view; char received[8192]; size_t length; };
+static Session test_session = {.view = {.id = 1, .cursor = 1}};
+static Session test_second = {.view = {.id = 2, .cursor = 1}};
+static Session *test_active = &test_session, *test_context = &test_session;
+static int test_live_first = 1, test_live_second;
+Session *session_current(void) { return test_context; }
+Session *session_active(void) { return test_active; }
+Session *session_find(uint64_t id) { return id == 1 && test_live_first ? &test_session : id == 2 && test_live_second ? &test_second : NULL; }
+Session *session_bind(Session *s) { Session *old=test_context;test_context=s;return old; }
+SessionView *session_view(Session *s) { return &s->view; }
+size_t session_count(void) { return test_live_first + test_live_second; }
+size_t session_index(Session *s) { (void)s; return 0; }
+Session *session_at(size_t i) { if(test_live_first){if(!i)return &test_session;i--;}return !i && test_live_second?&test_second:NULL; }
+Session *session_new(int c, int r) { (void)c; (void)r; return NULL; }
+void session_select(Session *s) { test_active=test_context=s; }
+void session_switch(Session *s,int focused) { (void)s;(void)focused; }
+void session_close(Session *s) { (void)s; }
+void sessions_free(void) {}
+void sessions_resize(int c,int r,int w,int h) { tresize(c,r);ttyresize(w,h); }
+void session_write(Session *s,const char *data,size_t len,int echo) { Session *old=session_bind(s);ttywrite(data,len,echo);session_bind(old); }
+int ttynew(const char *l,char *c,const char *o,char **a) { (void)l;(void)c;(void)o;(void)a;return -1; }
 /* Core dependencies not exercised by these frontend unit tests. */
 void selclear(void) {}
 void redraw(void) {}
@@ -16,6 +38,12 @@ void tresize(int c, int r)
 void *xrealloc(void *p, size_t n)
 {
     return realloc(p, n);
+}
+void *xmalloc(size_t n)
+{
+    void *p = malloc(n);
+    assert(p);
+    return p;
 }
 void ttyresize(int w, int h)
 {
@@ -95,6 +123,9 @@ int browseactive(void)
 void ttywrite(const char *s, size_t n, int echo)
 {
     (void)echo;
+    Session *endpoint=session_current();
+    assert(endpoint->length+n<sizeof endpoint->received);
+    memcpy(endpoint->received+endpoint->length,s,n);endpoint->length+=n;
     assert(delivered_len + n < sizeof delivered);
     memcpy(delivered + delivered_len, s, n);
     delivered_len += n;
@@ -167,6 +198,9 @@ static void event(int type, Atom data_type, const char *data)
 static void reset(void)
 {
     memset(&paste, 0, sizeof paste);
+    test_live_first=1;test_live_second=0;test_active=test_context=&test_session;
+    test_session.length=test_second.length=0;
+    test_session.view.mode=test_second.view.mode=0;
     ro = deleted = outstanding = 0;
     delivered_len = 0;
     delivered[0] = 0;
@@ -276,12 +310,38 @@ static void russian_commands(void)
     assert(browsekeysym(XK_Cyrillic_en, 0) == XK_y);
     assert(browsekeysym(XK_Escape, 0) == XK_Escape);
 }
+static void incr_switch_keeps_destination(void)
+{
+    reset();test_live_second=1;
+    event(SelectionNotify,100,"size");
+    event(PropertyNotify,101,"first");
+    session_select(&test_second);
+    xpastecancel(); /* Entering copy mode in B must not cancel A's paste. */
+    event(PropertyNotify,101,"second");
+    event(PropertyNotify,101,"");
+    assert(test_second.length==0);
+    assert(test_session.length==strlen("\033[200~firstsecond\033[201~"));
+    assert(!memcmp(test_session.received,"\033[200~firstsecond\033[201~",test_session.length));
+    assert(!paste.active && outstanding==0 && deleted==4);
+}
+static void incr_close_discards_remaining_chunks(void)
+{
+    reset();test_live_second=1;
+    event(SelectionNotify,100,"size");
+    event(PropertyNotify,101,"first");
+    size_t before=test_session.length;
+    xsessionfree(&test_session);test_live_first=0;session_select(&test_second);
+    event(PropertyNotify,101,"discard");
+    event(PropertyNotify,101,"");
+    assert(test_session.length==before && test_second.length==0);
+    assert(!paste.active && outstanding==0 && deleted==4);
+}
 struct test {
     const char *name;
     void (*run)(void);
 } cases[] = {
 #define T(n) {#n, n}
-    T(incr_complete), T(incr_cancel),     T(incr_ro_start), T(normal_paste), T(empty_paste),
+    T(incr_switch_keeps_destination), T(incr_close_discards_remaining_chunks), T(incr_complete), T(incr_cancel),     T(incr_ro_start), T(normal_paste), T(empty_paste),
     T(focus_ro),      T(ctrl_enter),      T(alpha_zero),    T(alpha_half),   T(alpha_opaque_visual),
     T(alpha_parse),   T(russian_commands)};
 #ifndef ST_FRONTEND_BRIDGE
