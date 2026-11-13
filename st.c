@@ -17,6 +17,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <wchar.h>
+#include <wctype.h>
 #include <X11/keysym.h>
 #include <X11/X.h>
 
@@ -207,7 +208,6 @@ static void tsetscroll(int, int);
 static void tswapscreen(void);
 static void tsetmode(int, int, const int *, int);
 static int twrite(const char *, int, int);
-static void tfulldirt(void);
 static void tcontrolcode(uchar );
 static void tdectest(char );
 static void tdefutf8(char);
@@ -232,6 +232,7 @@ static ssize_t xwrite(int, const char *, size_t);
 typedef struct {
 	int active, cols, rows, top, x, y, anchor, visual, count, g;
 	int searching, direction, querylen;
+	int yank, yankcount, yankstart, yankg;
 	int flashing, flashstart, flashend;
 	struct timespec flashuntil;
 	Rune query[128];
@@ -2768,10 +2769,32 @@ resettitle(void)
 	xsettitle(NULL);
 }
 
+static int
+tlinewrapped(Line line)
+{
+    /* Delayed wrap on a wide glyph is recorded on its leading cell. */
+    return (line[term.col - 1].mode & ATTR_WRAP) ||
+           (term.col > 1 && (line[term.col - 1].mode & ATTR_WDUMMY) &&
+            (line[term.col - 2].mode & ATTR_WRAP));
+}
+
 void
 drawregion(int x1, int y1, int x2, int y2)
 {
 	int y;
+	/* URL decoration can span soft-wrapped rows. A changed continuation
+	 * also invalidates the other visible rows of that logical line. */
+	/* Erasing the old wrap flag can disconnect the following logical line. */
+	for (y = y2 - 2; y >= y1; y--)
+		if (term.dirty[y]) term.dirty[y + 1] = 1;
+	int first = y1, dirty = 0;
+	for (y = y1; y < y2; y++) {
+		dirty |= term.dirty[y];
+		if (!tlinewrapped(TLINE(y)) || y == y2 - 1) {
+			if (dirty) tsetdirt(first, y);
+			first = y + 1; dirty = 0;
+		}
+	}
 
 	for (y = y1; y < y2; y++) {
 		if (!term.dirty[y])
@@ -2822,5 +2845,6 @@ redraw(void)
 }
 
 #include "browse.c"
+#include "url.c"
 
 #include "session.c"

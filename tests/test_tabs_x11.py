@@ -234,9 +234,48 @@ def main():
                 old_text=(2,2+cellheight,bottom.width-2,2+(oldrows-1)*cellheight)
                 saved_text=(2,2,bottom.width-2,2+(oldrows-2)*cellheight)
                 assert restored.crop(old_text).tobytes()==history.crop(saved_text).tobytes(), 'clear discarded visible rows instead of pushing history'
+                # Vim operator composition reaches real PRIMARY/CLIPBOARD and
+                # never sends its keys to the live PTY beneath the snapshot.
+                create=api(X,'XCreateSimpleWindow',U,P,U,I,I,C.c_uint,C.c_uint,C.c_uint,U,U)
+                convert=api(X,'XConvertSelection',I,P,U,U,U,U,U)
+                deleteprop=api(X,'XDeleteProperty',I,P,U,U)
+                destroy=api(X,'XDestroyWindow',I,P,U)
+                requestor=create(display,rootwindow(display),0,0,1,1,0,0,0)
+                target=atom(display,b'UTF8_STRING',0);clipprop=atom(display,b'ST_TEST_COPY',0)
+                def clipboard(selection='CLIPBOARD'):
+                    deleteprop(display,requestor,clipprop)
+                    convert(display,atom(display,selection.encode(),0),target,clipprop,requestor,0)
+                    flush(display,0)
+                    return until(lambda:prop(display,requestor,'ST_TEST_COPY'),'copy selection')
+                source=b'one two three four five six seven'
+                output(c,b'\x1bc\x1b[?25l'+source+b'\r\nsecond line\r\nthird')
+                time.sleep(.1);before=input_(c)
+                chord(display,'Control_L','Shift_L','space')
+                for k in ('g','g','0'):chord(display,k)
+                for sequence,expected in [('yw',b'one '),('ye',b'one'),('yW',b'one '),('y$',source),
+                                          ('2yw',b'one two '),('y2w',b'one two '),
+                                          ('2y3w',b'one two three four five six '),
+                                          ('yG',source+b'\nsecond line\nthird\n'+b'\n'*(active_size()[1]-3)),
+                                          ('yy',source+b'\n')]:
+                    for k in sequence:
+                        if k=='$':chord(display,'Shift_L','4')
+                        elif k.isupper():chord(display,'Shift_L',k.lower())
+                        else:chord(display,k)
+                    time.sleep(.05)
+                    actual=clipboard()
+                    assert actual==expected, (sequence,actual,expected)
+                    assert clipboard('PRIMARY')==expected, sequence+' PRIMARY'
+                chord(display,'y');chord(display,'Escape')
+                assert clipboard()==source+b'\n', 'cancelled operator changed clipboard'
+                for k in ('y','w'):chord(display,k)
+                time.sleep(.05);assert clipboard()==b'one ', 'Escape left copy mode'
+                assert input_(c)==before, 'copy commands leaked into PTY'
+                chord(display,'q');chord(display,'x')
+                until(lambda:input_(c)==before+b'x','normal input after copy mode')
+                destroy(display,requestor)
                 output(c,exit=True)
                 assert st.wait(timeout=5)==0
-                print('PASS X11: real PTYs, input/replies, palettes, resize, preserved pixels/rows, close-first and last-child exit')
+                print('PASS X11: real PTYs, input/replies, palettes, resize, preserved pixels/rows, close-first, Vim yank operators and last-child exit')
             finally:
                 if st and st.poll() is None:st.terminate();st.wait(timeout=5)
                 if display:close_display(display)

@@ -21,6 +21,7 @@ xsessionfree(Session *s)
 static void
 tabschanged(void)
 {
+    urlpress.cancelled = 1;
     if (!session_count()) return;
     SessionView *v = session_view(session_active());
     buttons = 0;
@@ -36,6 +37,7 @@ tabactivate(Session *s)
 {
     Session *old = session_active();
     if (!s || s == old) return;
+    urlpress.cancelled = 1;
     session_switch(s, win.mode & MODE_FOCUSED);
     buttons = 0;
     win.mode &= ~MODE_BLINK;

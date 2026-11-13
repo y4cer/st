@@ -295,7 +295,7 @@ static void reverse_index_history(void)
     browse(NULL);
     key(XK_g);
     key(XK_g);
-    key(XK_y);
+    key(XK_y); key(XK_y);
     assert(!strcmp(clipboard, "oldest\n"));
 }
 static void yank_flash(void)
@@ -304,7 +304,7 @@ static void yank_flash(void)
     browse(NULL);
     key(XK_g);
     key(XK_g);
-    key(XK_y);
+    key(XK_y); key(XK_y);
     assert(br.flashing && br.flashstart == 0 && br.flashend == term.col - 1);
     assert(browsetimeout() > 0 && browsetimeout() <= 200);
     assert(br.cells[0].bg == defaultbg); /* snapshot is not mutated */
@@ -323,7 +323,7 @@ static void yank_flash(void)
     flash_cells = 0;
     browsedraw();
     assert(flash_cells == 0);
-    key(XK_y);
+    key(XK_y); key(XK_y);
     assert(br.flashing);
     key(XK_q);
     assert(browsetimeout() == -1);
@@ -336,7 +336,7 @@ static void copy_snapshot(void)
     key(XK_g);
     key(XK_g);
     feed("\r\nchanged\r\nmore");
-    key(XK_y);
+    key(XK_y); key(XK_y);
     assert(!strcmp(clipboard, "oldest\n") && copies == 1);
 }
 static void copy_background_reset(void)
@@ -347,7 +347,7 @@ static void copy_background_reset(void)
     key(XK_g);
     feed("\033c");
     assert(browseactive());
-    key(XK_y);
+    key(XK_y); key(XK_y);
     assert(!strcmp(clipboard, "oldest\n"));
 }
 static void copy_visual(void)
@@ -449,7 +449,7 @@ static void copy_tiny(void)
     feed("x");
     browse(NULL);
     browsedraw();
-    key(XK_y);
+    key(XK_y); key(XK_y);
     assert(!strcmp(clipboard, "x\n"));
     key(XK_q);
     assert(!browseactive());
@@ -476,7 +476,7 @@ static void ring_wrap(void)
     browse(NULL);
     key(XK_g);
     key(XK_g);
-    key(XK_y);
+    key(XK_y); key(XK_y);
     assert(!strcmp(clipboard, "line0008\n"));
 }
 
@@ -739,7 +739,7 @@ static void deterministic_stress(void)
             if (browseactive()) {
                 key(XK_g);
                 key(XK_g);
-                key(XK_y);
+                key(XK_y); key(XK_y);
                 browsedraw();
                 key(XK_q);
             }
@@ -753,6 +753,137 @@ static void deterministic_stress(void)
         }
     }
 }
+/* Adapted from Shitty test_plain_uri_input.py; see shitty/URLS.md. */
+static void urleq(int x, int y, const char *expected)
+{
+    char *url = turlat(x, y);
+    if (!(expected ? url && !strcmp(url, expected) : !url))
+        fprintf(stderr, "URL at %d,%d: got %s, expected %s\n", x, y, url ? url : "NULL", expected ? expected : "NULL");
+    assert(expected ? url && !strcmp(url, expected) : !url);
+    free(url);
+}
+static void url_punctuation(void)
+{
+    init(100, 4);
+    const char *line = "see(HTTPS://Host.test/a(b)c), then www.example.org. http://[::1]/x!";
+    feed(line);
+    urleq(4, 0, "HTTPS://Host.test/a(b)c");
+    urleq(27, 0, NULL);
+    urleq(35, 0, "https://www.example.org");
+    urleq(52, 0, "http://[::1]/x");
+    unsigned char mask[100];
+    turlmask(0, mask, sizeof(mask), -1, -1);
+    for (int x = 0; x < 100; x++) {
+        char *url = turlat(x, 0);
+        assert(mask[x] == !!url);
+        free(url);
+        assert(!(term.line[0][x].mode & ATTR_UNDERLINE));
+        assert(term.line[0][x].fg == defaultfg);
+    }
+}
+static void url_rejected(void)
+{
+    init(100, 5);
+    feed("1https://host.test https//host.test https: https:// www. file:///tmp/x");
+    for (int x = 0; x < 100; x++) urleq(x, 0, NULL);
+    feed("\r\n\033[8mhttps://hidden.test\033[0m https://visible.test");
+    urleq(0, 1, NULL); urleq(20, 1, "https://visible.test");
+    feed("\r\nhttps://part\033[8m-hidden\033[0m.test");
+    urleq(0, 2, NULL);
+    urleq(-1, 0, NULL); urleq(100, 0, NULL); urleq(0, -1, NULL); urleq(0, 5, NULL);
+}
+static void url_wrapped(void)
+{
+    init(12, 5);
+    feed("https://host.test/long/path");
+    urleq(0, 0, "https://host.test/long/path");
+    urleq(11, 1, "https://host.test/long/path");
+    urleq(0, 2, "https://host.test/long/path");
+    feed("\033[2;2H ");
+    urleq(0, 0, "https://host");
+}
+static void url_hard_newline(void)
+{
+    init(40, 4);
+    feed("https://host.test/a\r\nb/c");
+    urleq(5, 0, "https://host.test/a"); urleq(0, 1, NULL);
+    feed("\r\nhttps://new.test ");
+    urleq(10, 2, "https://new.test");
+}
+static void url_history_snapshot(void)
+{
+    init(20, 3);
+    feed("https://old.test/long/path\r\nnext\r\nend");
+    assert(term.histlen == 1);
+    urleq(0, 0, "https://old.test/long/path");
+    kscrollup(&(Arg){.i = 1});
+    urleq(0, 0, "https://old.test/long/path");
+    browse(NULL); key(XK_g); key(XK_g); browsedraw();
+    urleq(0, 0, "https://old.test/long/path");
+    feed("\033cchanged");
+    urleq(0, 0, "https://old.test/long/path");
+    urleq(0, term.row - 1, NULL);
+    key(XK_q); urleq(0, 0, NULL);
+}
+static void url_wide(void)
+{
+    init(18, 4);
+    feed("https://host.test/界/道");
+    urleq(0, 0, "https://host.test/界/道");
+    urleq(0, 1, "https://host.test/界/道");
+    urleq(1, 1, "https://host.test/界/道");
+    unsigned char mask[18]; turlmask(1, mask, 18, -1, -1);
+    assert(mask[0] && mask[1]);
+}
+static void url_hover_range(void)
+{
+    init(20, 5);
+    feed("https://same.test/a/long\r\nhttps://same.test/a/long");
+    unsigned char mask[20];
+    turlmask(0, mask, 20, 1, 1);
+    for (int x = 0; x < 20; x++) assert(mask[x] == 2);
+    turlmask(1, mask, 20, 1, 1);
+    for (int x = 0; x < 20; x++)
+        assert(mask[x] == (x < (int)(strlen("https://same.test/a/long") % 20) ? 2 : 0));
+    turlmask(2, mask, 20, 1, 1);
+    for (int x = 0; x < 20; x++) assert(mask[x] == 1);
+    turlmask(0, mask, 20, 10, 1);
+    assert(mask[0] == 1);
+    for (int y = 0; y < term.row; y++)
+        for (int x = 0; x < term.col; x++) assert(!(term.line[y][x].mode & ATTR_BOLD));
+    feed("\033[2;1H\033[8mX\033[0m");
+    turlmask(0, mask, 20, 1, 1);
+    assert(mask[0] == 0); /* stationary hover, concealed continuation */
+}
+static void url_limit(void)
+{
+    init(80, 60);
+    char text[URL_MAX + 3];
+    memset(text, 'a', sizeof(text)); memcpy(text, "https://x/", 10);
+    text[URL_MAX] = 0; feed(text);
+    urleq(0, 0, text);
+    feed("b");
+    urleq(0, 0, NULL); urleq(10, 40, NULL);
+    /* The cap counts UTF-8 bytes, not cells or code points. */
+    feed("\033c");
+    for (int i = 10; i < URL_MAX; i += 3) memcpy(text + i, "界", 3);
+    feed(text); urleq(0, 0, text);
+    feed("b"); urleq(0, 0, NULL);
+}
+static void url_sessions_alternate(void)
+{
+    init(20, 3);
+    feed("https://first.test/path/long\r\nx\r\ny");
+    Session *first = session_current();
+    Session *second = session_new(20, 3); session_select(second);
+    feed("https://second.test"); urleq(0, 0, "https://second.test");
+    session_select(first); urleq(0, 0, "https://first.test/path/long");
+    feed("\033[?1049hplain"); urleq(0, 0, NULL);
+    feed("\033[Hhttps://alt.test"); urleq(0, 0, "https://alt.test");
+    feed("\033[?1049l"); urleq(0, 0, "https://first.test/path/long");
+}
+#include "test_browse_ops.h"
+
 static void cleanup(void)
 {
     sessions_free();
@@ -764,6 +895,9 @@ struct test {
     void (*run)(void);
 } tests[] = {
 #define T(n) {#n, n}
+    BROWSE_OPERATOR_TESTS
+    T(url_hover_range), T(url_punctuation), T(url_rejected), T(url_wrapped), T(url_hard_newline),
+    T(url_history_snapshot), T(url_wide), T(url_limit), T(url_sessions_alternate),
     T(yank_flash), T(deterministic_stress),  T(copy_wide_search),   T(selection_resize),
     T(selection_rectangle),   T(copy_wrapped_space), T(wide_erase),
     T(wide_delete),           T(wide_insert),        T(wide_resize),

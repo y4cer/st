@@ -1,5 +1,6 @@
 /* See LICENSE for license details. */
 #include <errno.h>
+#include <fcntl.h>
 #include <math.h>
 #include <poll.h>
 #include <limits.h>
@@ -104,6 +105,8 @@ typedef struct {
 	Window win;
 	Drawable buf;
 	GlyphFontSpec *specbuf; /* font spec buffer used for rendering */
+	unsigned char *urlmask;
+	Glyph *urlbuf;
 	Atom xembed, wmdeletewin, netwmname, netwmiconname, netwmpid;
 	struct {
 		XIM xim;
@@ -188,6 +191,7 @@ static int mouseaction(XEvent *, uint);
 static void brelease(XEvent *);
 static void bpress(XEvent *);
 static void bmotion(XEvent *);
+static void urlhoverevent(XEvent *);
 static void propnotify(XEvent *);
 static void selnotify(XEvent *);
 static void selrequest(XEvent *);
@@ -210,6 +214,8 @@ static void (*handler[LASTEvent])(XEvent *) = {
 	[FocusIn] = focus,
 	[FocusOut] = focus,
 	[MotionNotify] = bmotion,
+	[EnterNotify] = urlhoverevent,
+	[LeaveNotify] = urlhoverevent,
 	[ButtonPress] = bpress,
 	[ButtonRelease] = brelease,
 	[SelectionNotify] = selnotify,
@@ -495,6 +501,68 @@ mouseaction(XEvent *e, uint release)
 	return 0;
 }
 
+/* Capture a link gesture separately from selection and application mouse input. */
+static struct {
+    char *url;
+    uint64_t session;
+    int x, y, cancelled;
+} urlpress;
+
+static struct { int inside, x, y; } urlhover = {0, -1, -1};
+
+static void
+urlhoverposition(int px, int py)
+{
+    urlhover.x = urlhover.y = -1;
+    if (urlhover.inside && px >= borderpx && px < borderpx + win.tw &&
+        py >= TEXTTOP && py < TEXTTOP + win.th) {
+        urlhover.x = (px - borderpx) / win.cw;
+        urlhover.y = (py - TEXTTOP) / win.ch;
+    }
+}
+
+static void
+urlhoverevent(XEvent *e)
+{
+    int ox = urlhover.x, oy = urlhover.y;
+    urlhover.inside = e->type != LeaveNotify;
+    if (e->type == MotionNotify)
+        urlhoverposition(e->xmotion.x, e->xmotion.y);
+    else
+        urlhoverposition(e->xcrossing.x, e->xcrossing.y);
+    if (ox != urlhover.x || oy != urlhover.y) {
+        char *old = turlat(ox, oy), *current = turlat(urlhover.x, urlhover.y);
+        if (old || current) redraw();
+        free(old); free(current);
+    }
+}
+
+static int
+urlinside(XEvent *e)
+{
+    return e->xbutton.x >= borderpx && e->xbutton.x < borderpx + win.tw &&
+           e->xbutton.y >= TEXTTOP && e->xbutton.y < TEXTTOP + win.th;
+}
+
+static void
+urlopen(const char *url)
+{
+    pid_t child = fork();
+    if (child < 0) { perror("st: URL opener fork"); return; }
+    if (child) return; /* the regular SIGCHLD reaper also collects opener children */
+    close(ConnectionNumber(xw.dpy));
+    setsid();
+    int fd = open("/dev/null", O_RDWR);
+    if (fd >= 0) {
+        dup2(fd, STDIN_FILENO);
+        dup2(fd, STDOUT_FILENO);
+        if (fd > STDERR_FILENO) close(fd);
+    }
+    execlp(urlopener, urlopener, url, (char *)NULL);
+    perror("st: URL opener");
+    _exit(127);
+}
+
 void
 bpress(XEvent *e)
 {
@@ -508,6 +576,17 @@ bpress(XEvent *e)
         if (btn == Button1) tabselect(&(Arg){.i = first + MIN(visible - 1, (size_t)MAX(0, e->xbutton.x) / MAX(1, win.w / visible))});
         else if (btn == Button4 || btn == Button5) tabnext(&(Arg){.i = btn == Button4 ? -1 : 1});
         return;
+    }
+
+    if (urlpress.url) return;
+    if (btn == Button1 && match(ControlMask, e->xbutton.state) && urlinside(e)) {
+        char *url = turlat(evcol(e), evrow(e));
+        if (url) {
+            urlpress.url = url;
+            urlpress.session = session_view(session_active())->id;
+            urlpress.x = evcol(e); urlpress.y = evrow(e); urlpress.cancelled = 0;
+            return;
+        }
     }
 
 	if (browseactive()) {
@@ -761,6 +840,18 @@ xsetsel(char *str)
 void
 brelease(XEvent *e)
 {
+    if (urlpress.url && e->xbutton.button != Button1) return;
+    if (urlpress.url && e->xbutton.button == Button1) {
+        char *url = NULL;
+        if (!urlpress.cancelled && urlinside(e) &&
+            match(ControlMask, e->xbutton.state & ~Button1Mask) &&
+            urlpress.session == session_view(session_active())->id &&
+            urlpress.x == evcol(e) && urlpress.y == evrow(e))
+            url = turlat(evcol(e), evrow(e));
+        if (url && !strcmp(url, urlpress.url)) urlopen(url);
+        free(url); free(urlpress.url); urlpress.url = NULL;
+        return;
+    }
     if (e->xbutton.y < tabheight()) {
         if (e->xbutton.button >= 1 && e->xbutton.button <= 11) buttons &= ~(1u << (e->xbutton.button - 1));
         return;
@@ -787,6 +878,12 @@ brelease(XEvent *e)
 void
 bmotion(XEvent *e)
 {
+    urlhoverevent(e);
+    if (urlpress.url) {
+        if (!urlinside(e) || evcol(e) != urlpress.x || evrow(e) != urlpress.y)
+            urlpress.cancelled = 1;
+        return;
+    }
     if (e->xmotion.y < tabheight()) return;
 	if (browseactive())
 		return;
@@ -796,7 +893,7 @@ bmotion(XEvent *e)
 		return;
 	}
 
-	mousesel(e, 0);
+	if (e->xmotion.state & Button1Mask) mousesel(e, 0);
 }
 
 void
@@ -832,6 +929,8 @@ xresize(int col, int row)
 
 	/* resize to new width */
 	xw.specbuf = xrealloc(xw.specbuf, col * sizeof(GlyphFontSpec));
+	xw.urlmask = xrealloc(xw.urlmask, col);
+	xw.urlbuf = xrealloc(xw.urlbuf, col * sizeof(Glyph));
 	/* The backing pixmap is new even when the cell grid did not change.
 	 * A shrinking window need not generate Expose to repaint old rows. */
 	redraw();
@@ -1026,6 +1125,15 @@ xloadfont(Font *f, FcPattern *pattern)
 
 	FcConfigSubstitute(NULL, configured, FcMatchPattern);
 	XftDefaultSubstitute(xw.dpy, xw.scr, configured);
+
+	/* Xft < 2.3.5 uploads color glyphs with an invalid RenderAddGlyphs
+	 * request (BadLength), terminating the whole terminal. Keep the
+	 * constraint in f->pattern as well, for fallback sorting below.
+	 * Check the loaded library, not just the build-time headers. */
+	if (XftGetVersion() < 20305) {
+		FcPatternDel(configured, FC_COLOR);
+		FcPatternAddBool(configured, FC_COLOR, FcFalse);
+	}
 
 	match = FcFontMatch(NULL, configured, &result);
 	if (!match) {
@@ -1282,7 +1390,8 @@ xinit(int cols, int rows)
 	xw.attrs.bit_gravity = NorthWestGravity;
 	xw.attrs.event_mask = FocusChangeMask | KeyPressMask | KeyReleaseMask
 		| ExposureMask | VisibilityChangeMask | StructureNotifyMask
-		| ButtonMotionMask | ButtonPressMask | ButtonReleaseMask;
+		| ButtonMotionMask | ButtonPressMask | ButtonReleaseMask
+		| PointerMotionMask | EnterWindowMask | LeaveWindowMask;
 	xw.attrs.colormap = xw.cmap;
 
 	xw.win = XCreateWindow(xw.dpy, parent, xw.l, xw.t,
@@ -1303,6 +1412,8 @@ xinit(int cols, int rows)
 
 	/* font spec buffer */
 	xw.specbuf = xmalloc(cols * sizeof(GlyphFontSpec));
+	xw.urlmask = xmalloc(cols);
+	xw.urlbuf = xmalloc(cols * sizeof(Glyph));
 
 	/* Xft rendering context */
 	xw.draw = XftDrawCreate(xw.dpy, xw.buf, xw.vis, xw.cmap);
@@ -1450,6 +1561,11 @@ xmakeglyphfontspecs(XftGlyphFontSpec *specs, const Glyph *glyphs, int len, int x
 			FcConfigSubstitute(0, fcpattern,
 					FcMatchPattern);
 			FcDefaultSubstitute(fcpattern);
+			/* Fontconfig rules may replace the inherited constraint. */
+			if (XftGetVersion() < 20305) {
+				FcPatternDel(fcpattern, FC_COLOR);
+				FcPatternAddBool(fcpattern, FC_COLOR, FcFalse);
+			}
 
 			fontpattern = FcFontSetMatch(0, fcsets, 1,
 					fcpattern, &fcres);
@@ -1639,12 +1755,19 @@ xdrawcursor(int cx, int cy, Glyph g, int ox, int oy, Glyph og)
 	Color drawcol;
 
 	/* remove the old cursor */
+    turlmask(oy, xw.urlmask, win.tw / win.cw, urlhover.x, urlhover.y);
+    if (xw.urlmask[ox]) { og.fg = urlcolor; og.mode |= ATTR_UNDERLINE; }
+    if (xw.urlmask[ox] == 2) og.mode |= ATTR_BOLD;
 	if (selected(ox, oy))
 		og.mode ^= ATTR_REVERSE;
 	xdrawglyph(og, ox, oy);
 
 	if (IS_SET(MODE_HIDE))
 		return;
+
+	turlmask(cy, xw.urlmask, win.tw / win.cw, urlhover.x, urlhover.y);
+	if (xw.urlmask[cx]) g.mode |= ATTR_UNDERLINE;
+	if (xw.urlmask[cx] == 2) g.mode |= ATTR_BOLD;
 
 	/*
 	 * Select the right color for the right mode.
@@ -1779,7 +1902,18 @@ xsettitle(char *p)
 int
 xstartdraw(void)
 {
-	return session_current() == session_active() && IS_SET(MODE_VISIBLE);
+    if (session_current() != session_active() || !IS_SET(MODE_VISIBLE)) return 0;
+    /* Re-map the stationary pointer after resize, tab changes or output. */
+    if (urlhover.inside) {
+        Window root, child;
+        int rx, ry, px, py, ox = urlhover.x, oy = urlhover.y;
+        unsigned int state;
+        if (XQueryPointer(xw.dpy, xw.win, &root, &child, &rx, &ry, &px, &py, &state))
+            urlhoverposition(px, py);
+        else urlhover.x = urlhover.y = -1;
+        if (ox != urlhover.x || oy != urlhover.y) tfulldirt();
+    }
+    return 1;
 }
 
 void
@@ -1789,6 +1923,15 @@ xdrawline(Line line, int x1, int y1, int x2)
 	Glyph base, new;
 	XftGlyphFontSpec *specs = xw.specbuf;
 
+	turlmask(y1, xw.urlmask, x2, urlhover.x, urlhover.y);
+    memcpy(xw.urlbuf, line, x2 * sizeof(Glyph));
+    line = xw.urlbuf;
+    for (x = x1; x < x2; x++) {
+        if (!xw.urlmask[x] || (line[x].mode & ATTR_WDUMMY)) continue;
+        line[x].fg = urlcolor;
+        line[x].mode |= ATTR_UNDERLINE;
+        if (xw.urlmask[x] == 2) line[x].mode |= ATTR_BOLD;
+    }
 	numspecs = xmakeglyphfontspecs(specs, &line[x1], x2 - x1, x1, y1);
 	i = ox = 0;
 	for (x = x1; x < x2 && i < numspecs; x++) {
@@ -1859,8 +2002,10 @@ unmap(XEvent *ev)
 void
 xsetpointermotion(int set)
 {
+    (void)set;
     if (session_current() != session_active() || !xw.dpy) return;
-	MODBIT(xw.attrs.event_mask, set, PointerMotionMask);
+	/* Local link hover needs motion even when application reporting is off. */
+	xw.attrs.event_mask |= PointerMotionMask;
 	XChangeWindowAttributes(xw.dpy, xw.win, CWEventMask, &xw.attrs);
 }
 
@@ -2035,8 +2180,9 @@ kpress(XEvent *ev)
     if (IS_SET(MODE_KBDLOCK)) return;
     if (browseactive()) {
 		/* Use physical QWERTY keys, so commands also work in Russian. */
-		browseinput(browsekeysym(XLookupKeysym(e, (e->state & ShiftMask) ? 1 : 0), e->state),
-		            e->state, buf, len);
+        KeySym command = browsekeysym(XLookupKeysym(e, (e->state & ShiftMask) ? 1 : 0), e->state);
+        /* Shift used to type $, ^ or W is not an operator motion itself. */
+        if (!IsModifierKey(command)) browseinput(command, e->state, buf, len);
 		return;
 	}
 

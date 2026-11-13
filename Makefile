@@ -15,7 +15,7 @@ config.h:
 .c.o:
 	$(CC) $(STCFLAGS) -c $<
 
-st.o: config.h st.h win.h browse.c session.c
+st.o: config.h st.h win.h browse.c session.c url.c
 x.o: arg.h config.h st.h win.h tabs.c
 utf8.o: st.h
 
@@ -59,6 +59,8 @@ test-reference-sanitize-build:
 
 test-x11: st
 	python3 tests/test_tabs_x11.py
+	python3 tests/test_urls_x11.py
+	python3 tests/test_fonts_x11.py
 
 clean:
 	rm -f st $(OBJ) st-$(VERSION).tar.gz
@@ -67,7 +69,7 @@ clean:
 dist: clean
 	mkdir -p st-$(VERSION)
 	cp -R FAQ LEGACY TODO LICENSE Makefile README config.mk\
-		config.def.h st.info st.1 arg.h st.h win.h browse.c session.c tabs.c README.personal.md desktop tests $(SRC)\
+		config.def.h st.info st.1 arg.h st.h win.h browse.c session.c tabs.c url.c README.personal.md desktop tests $(SRC)\
 		st-$(VERSION)
 	tar -cf - st-$(VERSION) | gzip > st-$(VERSION).tar.gz
 	rm -rf st-$(VERSION)

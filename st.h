@@ -79,7 +79,11 @@ typedef union {
 
 void die(const char *, ...);
 void redraw(void);
+void tfulldirt(void);
 void draw(void);
+char *turlat(int, int);
+/* Mask values: 0 plain, 1 URL, 2 the particular URL under (hx, hy). */
+void turlmask(int, unsigned char *, int, int, int);
 
 int browseactive(void);
 double browsetimeout(void);

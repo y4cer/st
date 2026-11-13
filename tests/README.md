@@ -52,6 +52,30 @@ for `test-sanitize`. No graphical session or network access is required.
   The session test clears a background tab and checks ownership. X11 compares
   old output pixels with scrollback after a full erase and Shift+PageUp.
 
+- Nine native URL cases cover scheme case, punctuation, malformed/concealed
+  text, soft/hard line boundaries, wide cells, the UTF-8 byte limit, history,
+  snapshots and session isolation. `make test-x11` also runs `test_urls_x11.py`:
+  real pixel underlines and bold hover, pointer gestures, stale-target cancellation, application
+  mouse reports and a private fake opener recording exact argv. It never opens
+  a browser. See [URL scope and provenance](shitty/URLS.md).
+
+- Copy-mode operator tests in `test_browse_ops.h` exercise the real snapshot,
+  command state and clipboard. X11 also types `yw`, `ye`, `yW`, `y$`, counts,
+  `yG`, `yy` and Escape, reads both PRIMARY/CLIPBOARD, and checks that keys do
+  not reach the live PTY. Physical Shift presses are included in these tests.
+  Scope and provenance: [Vim-style operators](shitty/VIM.md).
+
+- `test_fonts_x11.py` (also in `make test-x11`) exercises actual Xft glyph
+  uploads, all four font styles, large glyphs and an explicitly selected color
+  font. It requires a color emoji font such as Noto Color Emoji. This regresses
+  the Pi `RenderAddGlyphs / BadLength` crash with its original three codepoints;
+  screenshots and delayed liveness checks ensure actual rendering took place.
+  Xft older than 2.3.5 uses monochrome fallback, including for primary fonts;
+  newer runtime libraries keep color support. This is inspired by the pinned
+  Shitty `tst/test_color_font_render.py`, but does not claim its color-pixel or
+  ZWJ-shaping assertions. `ST_TEST_ST` can select an old binary to verify that
+  the regression fails. Logs contain no literal emoji.
+
 ## Full Shitty reference suite
 
 The selected native adaptations below are now supplemented by the complete
@@ -75,6 +99,8 @@ layer of https://github.com/pg83/shitty at commit
 - `tst/test_parser_states.py`: embedded NUL during CSI and incremental parsing.
 - `tst/test_reset_matrix.py`: RIS restoring tab stops and defaults.
 - `tst/test_scrollback.py`: reverse index, history isolation and scrolled views.
+- `tst/test_plain_uri_input.py`: plain-URL detection, cell mapping, limits and
+  underline/open behavior, adapted through core and real X11 tests.
 
 The corresponding notices are retained in `LICENSE.shitty` and
 `LICENSE.xtermjs`. **The Shitty repository as a whole is not MIT**: its imported

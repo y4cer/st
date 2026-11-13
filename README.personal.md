@@ -43,6 +43,22 @@ Alt-number and cycling shortcuts are passed through when there is no eligible
 target. Tab actions remain available in copy mode and with application keyboard
 lock enabled.
 
+## Web links
+
+Visible `http://`, `https://` and `www.` links are blue and underlined.
+Hovering a link makes that occurrence bold without holding Ctrl; moving away
+restores its original weight. Soft-wrapped links become bold across their rows.
+**Ctrl + left click** opens one in the default browser via `xdg-open`; `www.`
+uses HTTPS. This works in scrollback, copy mode and individual tabs, including
+links continued by a soft wrap. Ordinary selection remains available; dragging
+or changing the target between press and release cancels opening. Ctrl-click
+on a link takes priority over application mouse reporting.
+
+The color and opener are `urlcolor` and `urlopener` in config.h. Concealed text
+and copy-mode status lines are excluded. URLs over 4096 UTF-8 bytes are rejected
+rather than truncated. Other schemes and OSC 8 labels are not supported yet.
+Test provenance and scope: [tests/shitty/URLS.md](tests/shitty/URLS.md).
+
 ## Clear screen without losing output
 
 `Ctrl+L` in fish moves the prompt to the top while keeping the previous screen
@@ -75,14 +91,22 @@ but keyboard input, mouse reports and clipboard pastes are not forwarded
 while copy mode is active. The bottom row displays `COPY [RO]`.
 
 - `h/j/k/l`, arrows: move; a numeric prefix repeats movement.
-- `w/b/e`: word motions; `0/$`: start/end of line.
+- `w/b/e`: word motions; `W/B/E`: whitespace-delimited WORD motions.
+- `0/^/$`: start, first nonblank, end of a displayed line.
 - `gg/G`: oldest/newest line; `H/M/L`: top/middle/bottom of viewport.
 - Ctrl+u/d: half-page up/down; Ctrl+b/f or PageUp/PageDown: full page.
 - `v`: character selection; `V`: line selection.
-- `y`: copy selection to PRIMARY and CLIPBOARD, staying in copy mode.
-  Without a selection, copy the current line.
+- In normal mode, `y` waits for a motion: `yw`, `ye`, `y$`, `y0`, `y^`,
+  `yb`, `yh`, `yl`; WORD variants `yW/yB/yE` also work.
+- `yy` copies the current line; `yj/yk`, `ygg/yG`, `yH/yM/yL` copy whole
+  displayed lines through the motion target. `Y` is not an alias.
+- Counts work before and after `y`: `2yw`, `y2w`, `2y3w`, `3yy`.
+  The pending command appears in the status line; Escape cancels it.
+- In visual mode, `y` immediately copies the selection. Every completed yank
+  updates PRIMARY and CLIPBOARD, briefly highlights the copied cells, and stays
+  in copy mode.
 - `/` or `?`: enter forward/backward search; Enter runs it, `n/N` repeat.
-- Escape: cancel search/selection, or leave copy mode.
+- Escape: cancel a pending operator, search or selection, or leave copy mode.
 - `q`, `i`, Ctrl+c, Ctrl+Shift+Space: leave copy mode.
 - Mouse wheel: move three lines.
 

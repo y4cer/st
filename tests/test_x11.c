@@ -29,7 +29,10 @@ void session_write(Session *s,const char *data,size_t len,int echo) { Session *o
 int ttynew(const char *l,char *c,const char *o,char **a) { (void)l;(void)c;(void)o;(void)a;return -1; }
 /* Core dependencies not exercised by these frontend unit tests. */
 void selclear(void) {}
+char *turlat(int x, int y) { (void)x; (void)y; return NULL; }
+void turlmask(int y, unsigned char *mask, int columns, int hx, int hy) { (void)hx; (void)hy; (void)y; memset(mask, 0, columns); }
 void redraw(void) {}
+void tfulldirt(void) {}
 void tresize(int c, int r)
 {
     (void)c;

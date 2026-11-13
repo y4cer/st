@@ -251,3 +251,11 @@ developers about fixing this bug.
 
 As of 2022-09-05 this now seems to be finally fixed in libXft 2.3.5:
 https://gitlab.freedesktop.org/xorg/lib/libxft/-/blob/libXft-2.3.5/NEWS
+
+This fork checks XftGetVersion() at runtime and requests non-color fonts for
+both primary and fallback font matching when Xft is older than 2.3.5. This
+prevents the fatal X error without changing other applications' fontconfig
+settings or removing fonts. Some emoji may appear monochrome or as a missing
+glyph on these old libraries. Upgrade libXft to 2.3.5 or newer and open a new
+st process to enable color font matching; no st rebuild is required.
+`make test-x11` includes a real glyph-upload regression for this failure.

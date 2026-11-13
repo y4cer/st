@@ -11,7 +11,7 @@ checks** against the same st (including all 400 fuzz seeds); **2,832 compare
 reference assertions or documented golden projections**. These are not claims of
 full Shitty compatibility. Known failures may stop scenarios before later checks.
 
-The 74 native regressions, seven session-manager cases, 13 adapter contracts
+The 93 native regressions, seven session-manager cases, 13 adapter contracts
 and four gate-policy tests pass
 in addition to that inventory. Libvterm's completed fixtures check 818 assertions
 and skip 154 source operations/assertions; four passing fixtures are partial.
